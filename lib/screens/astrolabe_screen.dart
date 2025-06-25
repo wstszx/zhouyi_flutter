@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zhouyi/screens/charting_screen.dart';
 
 class AstrolabeScreen extends StatelessWidget {
   const AstrolabeScreen({super.key});
@@ -46,7 +47,10 @@ class AstrolabeScreen extends StatelessWidget {
         const SizedBox(width: 10),
         ElevatedButton.icon(
           onPressed: () {
-            // Navigate to new astrolabe screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChartingScreen()),
+            );
           },
           icon: const Icon(Icons.add),
           label: const Text('新建'),
