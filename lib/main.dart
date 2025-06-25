@@ -55,11 +55,11 @@ class _SelectMajorScreenState extends State<SelectMajorScreen> {
           ),
           SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 139),
+                  const SizedBox(height: 80),
                   _buildSection(
                     title: '主修学术（必选）',
                     options: _majorOptions,
@@ -71,11 +71,11 @@ class _SelectMajorScreenState extends State<SelectMajorScreen> {
                     options: _minorOptions,
                     isMajor: false,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   _buildTextFieldSection('从什么渠道发现该软件（必填）', '请输入发现渠道（最多8字）'),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   _buildTextFieldSection('请设置【1v1问答】赏金（必填）', '0-999（用户APP内可修改）', suffixText: '元'),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                   Center(
                     child: GestureDetector(
                       onTap: () {
@@ -83,12 +83,12 @@ class _SelectMajorScreenState extends State<SelectMajorScreen> {
                       },
                       child: SvgPicture.asset(
                         'assets/images/button_background.svg',
-                        width: 380,
-                        height: 88,
+                        width: 340,
+                        height: 78,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -106,15 +106,15 @@ class _SelectMajorScreenState extends State<SelectMajorScreen> {
           fit: BoxFit.fill,
         ),
         Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 20),
+              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 16),
               Wrap(
-                spacing: 20,
-                runSpacing: 20,
+                spacing: 16,
+                runSpacing: 16,
                 children: options.map((option) {
                   final isSelected = isMajor ? _selectedMajor == option : _selectedMinors.contains(option);
                   return GestureDetector(
@@ -138,11 +138,11 @@ class _SelectMajorScreenState extends State<SelectMajorScreen> {
                       children: [
                         SvgPicture.asset(
                           isSelected ? 'assets/images/checkbox_checked.svg' : 'assets/images/checkbox_unchecked.svg',
-                          width: 28,
-                          height: 28,
+                          width: 24,
+                          height: 24,
                         ),
-                        const SizedBox(width: 10),
-                        Text(option, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 8),
+                        Text(option, style: const TextStyle(fontSize: 18)),
                       ],
                     ),
                   );
@@ -163,12 +163,12 @@ class _SelectMajorScreenState extends State<SelectMajorScreen> {
           fit: BoxFit.fill,
         ),
         Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 20),
+              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(
                   hintText: hint,
