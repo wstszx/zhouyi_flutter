@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zhouyi/screens/my_questions_screen.dart';
+import 'package:zhouyi/screens/new_question_screen.dart';
 
 class QaMarketplaceScreen extends StatelessWidget {
   const QaMarketplaceScreen({super.key});
@@ -62,7 +63,10 @@ class QaMarketplaceScreen extends StatelessWidget {
           );
         }),
         _buildActionButton(context, '发起新问询', () {
-          // Navigate to new question screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NewQuestionScreen()),
+          );
         }, isPrimary: true),
       ],
     );
