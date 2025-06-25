@@ -36,10 +36,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               children: [
                 const SizedBox(height: 60),
                 // Logo
-                const Icon(
-                  Icons.ac_unit, // Placeholder for Logo
-                  size: 80,
-                  color: Color(0xFF971B00),
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 80,
                 ),
                 const SizedBox(height: 16),
                 const Text(
