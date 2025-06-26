@@ -13,6 +13,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _birthDateController = TextEditingController();
   DateTime? _selectedDate;
   int _selectedCalendar = 0; // 0 for Gregorian, 1 for Lunar
+  String? _selectedGender;
 
   Future<void> _selectDate(BuildContext context) async {
     DateTime? pickedDate = _selectedDate ?? DateTime(1990, 1, 1);
@@ -147,11 +148,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const TextField(
-              decoration: InputDecoration(
+            DropdownButtonFormField<String>(
+              value: _selectedGender,
+              decoration: const InputDecoration(
                 labelText: '性别',
                 border: OutlineInputBorder(),
               ),
+              items: <String>['男', '女']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedGender = newValue;
+                });
+              },
             ),
             const SizedBox(height: 20),
             Row(
