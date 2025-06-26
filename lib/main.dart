@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zhouyi/screens/qa_marketplace_screen.dart';
-import 'package:zhouyi/screens/one_on_one_screen.dart';
-import 'package:zhouyi/screens/astrolabe_screen.dart';
-import 'package:zhouyi/screens/profile_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/qa_marketplace_screen.dart';
+import 'screens/one_on_one_screen.dart';
+import 'screens/astrolabe_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         fontFamily: 'PingFang SC',
       ),
-      home: const MainScreen(),
+      home: const LoginScreen(),
     );
   }
 }
