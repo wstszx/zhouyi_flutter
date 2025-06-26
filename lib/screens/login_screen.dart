@@ -104,14 +104,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               )
             else
-              TextField(
-                decoration: InputDecoration(
-                  labelText: '(验证码) XXXXXXX',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
+             Row(
+               children: [
+                 const Expanded(
+                   child: TextField(
+                     decoration: InputDecoration(
+                       labelText: '(验证码) XXXXXXX',
+                       border: OutlineInputBorder(),
+                     ),
+                   ),
+                 ),
+                 const SizedBox(width: 10),
+                 ElevatedButton(
+                   onPressed: () {},
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: const Color(0xFF971B00),
+                   ),
+                   child: const Text('获取验证码',
+                       style: TextStyle(color: Colors.white)),
+                 ),
+               ],
+             ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
