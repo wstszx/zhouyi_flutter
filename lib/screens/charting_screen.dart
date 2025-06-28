@@ -1,7 +1,17 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-class ChartingScreen extends StatelessWidget {
+class ChartingScreen extends StatefulWidget {
   const ChartingScreen({super.key});
+
+  @override
+  State<ChartingScreen> createState() => _ChartingScreenState();
+}
+
+class _ChartingScreenState extends State<ChartingScreen> {
+  DateTime? _selectedDate;
+  bool _isGregorian = true;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +29,6 @@ class ChartingScreen extends StatelessWidget {
           children: [
             _buildTextField(context, '姓名', '请输入姓名'),
             _buildDropdownField(context, '性别', ['男', '女']),
-            _buildDropdownField(context, '公历/农历', ['公历', '农历']),
             _buildDateField(context, '生辰', '年、月、日、时'),
             const SizedBox(height: 40),
             _buildActionButton(context, '排盘', () {}),
@@ -92,12 +101,9 @@ class ChartingScreen extends StatelessWidget {
           SizedBox(width: 80, child: Text(label, style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513)))),
           Expanded(
             child: InkWell(
-              onTap: () async {
-                // Show date picker
-              },
+              onTap: () => _showDatePicker(context),
               child: InputDecorator(
                 decoration: InputDecoration(
-                  hintText: hint,
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -105,12 +111,118 @@ class ChartingScreen extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                child: Text(hint, style: TextStyle(color: Colors.grey.shade600)),
+                child: Text(
+                  _selectedDate == null
+                      ? hint
+                      : DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate!),
+                  style: TextStyle(
+                      color: _selectedDate == null
+                          ? Colors.grey.shade600
+                          : Colors.black),
+                ),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showDatePicker(BuildContext context) {
+    DateTime initialDate = _selectedDate ?? DateTime.now();
+    DateTime tempDate = initialDate;
+    bool isGregorian = _isGregorian;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: MediaQuery.of(context).copyWith().size.height / 2.5,
+              color: Colors.white,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          child: const Text('取消', style: TextStyle(color: Colors.grey)),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CupertinoButton(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Text('公历', style: TextStyle(color: isGregorian ? Colors.brown : Colors.grey)),
+                                onPressed: () {
+                                  setModalState(() {
+                                    isGregorian = true;
+                                  });
+                                },
+                              ),
+                              CupertinoButton(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Text('农历', style: TextStyle(color: !isGregorian ? Colors.brown : Colors.grey)),
+                                onPressed: () {
+                                  setModalState(() {
+                                    isGregorian = false;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          child: const Text('今天', style: TextStyle(color: Colors.brown)),
+                          onPressed: () {
+                            setState(() {
+                              _selectedDate = DateTime.now();
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 200,
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.dateAndTime,
+                      initialDateTime: initialDate,
+                      onDateTimeChanged: (DateTime newDate) {
+                        tempDate = newDate;
+                      },
+                      use24hFormat: true,
+                      minuteInterval: 1,
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: CupertinoButton(
+                      color: Colors.black,
+                      child: const Text('确定'),
+                      onPressed: () {
+                        setState(() {
+                          _selectedDate = tempDate;
+                          _isGregorian = isGregorian;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
