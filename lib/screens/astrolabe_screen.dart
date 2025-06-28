@@ -81,7 +81,7 @@ class AstrolabeScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('姓名：$name', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                Text('$name', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
                 const SizedBox(height: 8),
                 Text('生辰：$birthDate', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
               ],

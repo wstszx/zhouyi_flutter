@@ -7,7 +7,7 @@ class ChartingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('排盘', style: TextStyle(color: Color(0xFF8B4513))),
+        title: const Text('新建排盘', style: TextStyle(color: Color(0xFF8B4513))),
         backgroundColor: const Color(0xFFFDEBEB),
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF8B4513)),
