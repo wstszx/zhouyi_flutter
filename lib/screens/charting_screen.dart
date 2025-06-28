@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:zhouyi/models/divination_result.dart';
+import 'package:zhouyi/screens/divination_result_screen.dart';
 
 class ChartingScreen extends StatefulWidget {
   const ChartingScreen({super.key});
@@ -10,6 +14,8 @@ class ChartingScreen extends StatefulWidget {
 }
 
 class _ChartingScreenState extends State<ChartingScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  String _selectedGender = '男';
   DateTime? _selectedDate;
   bool _isGregorian = true;
 
@@ -27,18 +33,40 @@ class _ChartingScreenState extends State<ChartingScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            _buildTextField(context, '姓名', '请输入姓名'),
+            _buildTextField(context, '姓名', '请输入姓名', _nameController),
             _buildDropdownField(context, '性别', ['男', '女']),
             _buildDateField(context, '生辰', '年、月、日、时'),
             const SizedBox(height: 40),
-            _buildActionButton(context, '排盘', () {}),
+            _buildActionButton(context, '排盘', () async {
+              if (_nameController.text.isNotEmpty && _selectedDate != null) {
+                try {
+                  final jsonString = await rootBundle.loadString('divination_response.json');
+                  final jsonResponse = json.decode(jsonString);
+                  final result = DivinationResult.fromJson(jsonResponse);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => DivinationResultScreen(result: result)),
+                  );
+                } catch (e, s) {
+                  print('排盘失败: $e');
+                  print('堆栈跟踪: $s');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('排盘失败: $e')),
+                  );
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('请输入完整的姓名和生辰')),
+                );
+              }
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField(BuildContext context, String label, String hint) {
+  Widget _buildTextField(BuildContext context, String label, String hint, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -46,6 +74,7 @@ class _ChartingScreenState extends State<ChartingScreen> {
           SizedBox(width: 80, child: Text(label, style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513)))),
           Expanded(
             child: TextField(
+              controller: controller,
               decoration: InputDecoration(
                 hintText: hint,
                 filled: true,
@@ -85,7 +114,11 @@ class _ChartingScreenState extends State<ChartingScreen> {
                   child: Text(value),
                 );
               }).toList(),
-              onChanged: (_) {},
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedGender = newValue!;
+                });
+              },
             ),
           ),
         ],
