@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:zhouyi/screens/charting_screen.dart';
 
 class AstrolabeScreen extends StatelessWidget {
@@ -68,30 +69,56 @@ class AstrolabeScreen extends StatelessWidget {
   }
 
   Widget _buildAstrolabeCard(BuildContext context, String name, String birthDate) {
-    return Card(
-      color: const Color(0xFFFDEBEB),
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$name', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
-                const SizedBox(height: 8),
-                Text('生辰：$birthDate', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
-              ],
-            ),
-            const Text(
-              '辛 乙 甲 庚\n已 卯 午 申',
-              textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 16, color: Color(0xFF8B4513), fontWeight: FontWeight.bold),
-            ),
-          ],
+    return Slidable(
+      key: const ValueKey(0),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (context) {
+              // TODO: Implement delete action
+            },
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: '删除',
+          ),
+          SlidableAction(
+            onPressed: (context) {
+              // TODO: Implement edit action
+            },
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            icon: Icons.edit,
+            label: '编辑',
+          ),
+        ],
+      ),
+      child: Card(
+        color: const Color(0xFFFDEBEB),
+        elevation: 0,
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$name', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                  const SizedBox(height: 8),
+                  Text('生辰：$birthDate', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                ],
+              ),
+              const Text(
+                '辛 乙 甲 庚\n已 卯 午 申',
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 16, color: Color(0xFF8B4513), fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ),
     );
