@@ -3,8 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:zhouyi/models/divination_result.dart';
-import 'package:zhouyi/screens/divination_result_screen.dart';
+import 'package:zhouyi/screens/paipan_result_screen.dart';
 
 class ChartingScreen extends StatefulWidget {
   const ChartingScreen({super.key});
@@ -40,12 +39,9 @@ class _ChartingScreenState extends State<ChartingScreen> {
             _buildActionButton(context, '排盘', () async {
               if (_nameController.text.isNotEmpty && _selectedDate != null) {
                 try {
-                  final jsonString = await rootBundle.loadString('divination_response.json');
-                  final jsonResponse = json.decode(jsonString);
-                  final result = DivinationResult.fromJson(jsonResponse);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => DivinationResultScreen(result: result)),
+                    MaterialPageRoute(builder: (context) => const PaipanResultScreen()),
                   );
                 } catch (e, s) {
                   print('排盘失败: $e');

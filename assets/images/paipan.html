@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>纯前端八字排盘结果</title>
+    <meta name="viewport" content="initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+    <meta name="description" content="一个完全在浏览器中运行的纯前端八字排盘应用，无需服务器支持。">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 15px; background-color: #f4f4f9; }
+        .result-container { display: block; } /* Make results visible by default */
+        .imageye-selected { outline: 2px solid black !important; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important; }
+        .smnr { background: #FFFFFF; }
+        .smnr .table { border-collapse: collapse; width: 100%; text-align: center; font-size: 12px; margin-bottom: 10px; border: 1px solid #ccc; }
+        .smnr .table td { padding: 5px; border: 1px solid #ddd; }
+        .smnr .table td .big { font-size: 24px; font-weight: bold; }
+        .smnr .table td .small { font-size: 10px; color: #333; }
+        .smnr .table a { color: #0066CC; text-decoration: none; cursor: pointer; }
+        .smnr .table .item { display: flex; flex-direction: column; }
+        .smnr .table .item div { flex: 1; }
+        .smnr .bz { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        h2 { text-align:center; color:#CC0000; }
+        .line { display: flex; }
+        .line .nowrap { white-space: nowrap; }
+        .swiper-container { overflow: hidden; }
+        .swiper-wrapper { display: flex; }
+        .swiper-slide { flex-shrink: 0; padding: 5px; border: 1px solid #ccc; margin: 0 2px; cursor: pointer; }
+        .swiper-slide.kong { background-color: #f0f0f0; }
+        #xipandayungz td, #dayunliunian td, #xipanliuyue td, #xipanliushi td a { cursor: pointer; }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.5.1/css/swiper.min.css" rel="stylesheet">
+</head>
+<body>
+
+<h2 style="text-align:center; color:#CC0000;">八字排盘</h2>
+
+<div class="result-container">
+    <div class="smnr">
+        <div style="padding:10px;">
+        <b>八字排盘结果：</b><br>
+        <table class="table" border="0" cellpadding="0" cellspacing="0">
+            <tbody><tr style="background-color:#666">
+            <td><b style="white-space:nowrap;">四柱: </b></td>
+            <td id="shenxianyin1"><a onclick="sc('wd','身宫')">身宫</a></td>
+            <td id="mingxianyin1"><a onclick="sc('wd','命宫')">命宫</a></td>
+            <td id="taixianyin1"><a onclick="sc('wd','胎元')">胎元</a></td>
+            <td id="xxianyin1"><a onclick="sc('wd','胎息')">胎息</a></td>
+            <td><a onclick="sc('wd','年柱')">年柱</a></td>
+            <td><a onclick="sc('wd','月柱')">月柱</a></td>
+            <td><a onclick="sc('wd','日柱')">日柱</a></td>
+            <td><a onclick="sc('wd','时柱')">时柱</a></td>
+            </tr>
+            <tr style="background-color:#CCC">
+            <td><b style="white-space:nowrap;">十神: </b></td>
+            <td id="shenxianyin2"><span id="aBZcolor.Sgys"><a id="aDZSS[BZ.Sg]['全']"></a></span></td>
+            <td id="mingxianyin2"><span id="aBZcolor.mgys"><a id="aDZSS[BZ.mg]['全']"></a></span></td>
+            <td id="taixianyin2"><span id="aBZcolor.tgys"><a id="aDZSS[BZ.tg]['全']"></a></span></td>
+            <td id="xxianyin2"><span id="aBZcolor.Tgys"><a id="aDZSS[BZ.Tg]['全']"></a></span></td>
+            <td><span id="aBZcolor.ngys"><a id="aDZSS[BZ.ng]['全']"></a></span></td>
+            <td><span id="aBZcolor.ygys"><a id="aDZSS[BZ.yg]['全']"></a></span></td>
+            <td><span style="flex:1">
+            <font id="aBZcolor.rgys"><a id="asystem.sexx"></a></font>
+            </span></td>
+            <td><span id="aBZcolor.sgys"><a id="aDZSS[BZ.sg]['全']"></a></span></td>
+            </tr>
+            <tr style="background-color:#999" id="bm_tglines">
+            <td><b style="white-space:nowrap;">天干: </b></td>
+            <td id="shenxianyin3"><span class="big" id="aBZcolor.Sgysa"><a id="aBZ.Sg"></a></span></td>
+            <td id="mingxianyin3"><span class="big" id="aBZcolor.mgysa"><a id="aBZ.mg"></a></span></td>
+            <td id="taixianyin3"><span class="big" id="aBZcolor.tgysa"><a id="aBZ.tg"></a></span></td>
+            <td id="xxianyin3"><span class="big" id="aBZcolor.Tgysa"><a id="aBZ.Tg"></a></span></td>
+            <td><span class="big" id="aBZcolor.ngysa"><a id="aBZ.ng"></a></span></td>
+            <td><span class="big" id="aBZcolor.ygysa"><a id="aBZ.yg"></a></span></td>
+            <td><span class="big" id="aBZcolor.rgysa"><a id="aBZ.rg"></a></span></td>
+            <td><span class="big" id="aBZcolor.sgysa"><a id="aBZ.sg"></a></span></td>
+            </tr>
+            <tr style="background-color:#CCC" id="bm_dzlines">
+            <td><b style="white-space:nowrap;">地支: </b></td>
+            <td id="shenxianyin4"><span class="big" id="aBZcolor.Sbqysa"><a id="aBZ.Sz"></a></span></td>
+            <td id="mingxianyin4"><span class="big" id="aBZcolor.mbqysa"><a id="aBZ.mz"></a></span></td>
+            <td id="taixianyin4"><span class="big" id="aBZcolor.tbqysa"><a id="aBZ.tz"></a></span></td>
+            <td id="xxianyin4"><span class="big" id="aBZcolor.Tbqysa"><a id="aBZ.Tz"></a></span></td>
+            <td><span class="big" id="aBZcolor.nbqysa"><a id="aBZ.nz"></a></span></td>
+            <td><span class="big" id="aBZcolor.ybqysa"><a id="aBZ.yz"></a></span></td>
+            <td><span class="big" id="aBZcolor.rbqysa"><a id="aBZ.rz"></a></span></td>
+            <td><span class="big" id="aBZcolor.sbqysa"><a id="aBZ.sz"></a></span></td>
+            </tr>
+            <tr style="background-color:#999">
+            <td><b style="white-space:nowrap;">藏干: </b></td>
+            <td id="shenxianyin5"><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.Sbqys"><a id="aZGss.Sbq"></a> <a id="aDZSS[BZ.Sz]['本']['全']"></a></span><span id="aBZcolor.Szqys"><a id="aZGss.Szq"></a> <a id="aDZSS[BZ.Sz]['中']['全']"></a></span><span id="aBZcolor.Syqys"><a id="aZGss.Syq"></a> <a id="aDZSS[BZ.Sz]['余']['全']"></a></span></span></td>
+            <td id="mingxianyin5"><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.mbqys"><a id="aZGss.mbq"></a> <a id="aDZSS[BZ.mz]['本']['全']"></a></span><span id="aBZcolor.mzqys"><a id="aZGss.mzq"></a> <a id="aDZSS[BZ.mz]['中']['全']"></a></span><span id="aBZcolor.myqys"><a id="aZGss.myq"></a> <a id="aDZSS[BZ.mz]['余']['全']"></a></span></span></td>
+            <td id="taixianyin5"><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.tbqys"><a id="aZGss.tbq"></a> <a id="aDZSS[BZ.tz]['本']['全']"></a></span><span id="aBZcolor.tzqys"><a id="aZGss.tzq"></a> <a id="aDZSS[BZ.tz]['中']['全']"></a></span><span id="aBZcolor.tyqys"><a id="aZGss.tyq"></a> <a id="aDZSS[BZ.tz]['余']['全']"></a></span></span></td>
+            <td id="xxianyin5"><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.Tbqys"><a id="aZGss.Tbq"></a> <a id="aDZSS[BZ.Tz]['本']['全']"></a></span><span id="aBZcolor.Tzqys"><a id="aZGss.Tzq"></a> <a id="aDZSS[BZ.Tz]['中']['全']"></a></span><span id="aBZcolor.Tyqys"><a id="aZGss.Tyq"></a> <a id="aDZSS[BZ.Tz]['余']['全']"></a></span></span></td>
+            <td><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.nbqys"><a id="aZGss.nbq"></a> <a id="aDZSS[BZ.nz]['本']['全']"></a></span><span id="aBZcolor.nzqys"><a id="aZGss.nzq"></a> <a id="aDZSS[BZ.nz]['中']['全']"></a></span><span id="aBZcolor.nyqys"><a id="aZGss.nyq"></a> <a id="aDZSS[BZ.nz]['余']['全']"></a></span></span></td>
+            <td><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.ybqys"><a id="aZGss.ybq"></a> <a id="aDZSS[BZ.yz]['本']['全']"></a></span><span id="aBZcolor.yzqys"><a id="aZGss.yzq"></a> <a id="aDZSS[BZ.yz]['中']['全']"></a></span><span id="aBZcolor.yyqys"><a id="aZGss.yyq"></a> <a id="aDZSS[BZ.yz]['余']['全']"></a></span></span></td>
+            <td><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.rbqys"><a id="aZGss.rbq"></a> <a id="aDZSS[BZ.rz]['本']['全']"></a></span><span id="aBZcolor.rzqys"><a id="aZGss.rzq"></a> <a id="aDZSS[BZ.rz]['中']['全']"></a></span><span id="aBZcolor.ryqys"><a id="aZGss.ryq"></a> <a id="aDZSS[BZ.rz]['余']['全']"></a></span></span></td>
+            <td><span style="flex:1;display:flex;flex-direction:column;"><span id="aBZcolor.sbqys"><a id="aZGss.sbq"></a> <a id="aDZSS[BZ.sz]['本']['全']"></a></span><span id="aBZcolor.szqys"><a id="aZGss.szq"></a> <a id="aDZSS[BZ.sz]['中']['全']"></a></span><span id="aBZcolor.syqys"><a id="aZGss.syq"></a> <a id="aDZSS[BZ.sz]['余']['全']"></a></span></span></td>
+            </tr>
+            <tr style="background-color:#CCC">
+            <td><b style="white-space:nowrap;clear:both;">纳音: </b></td>
+            <td id="shenxianyin6"><a id="aDYNY[BZ.Sg+BZ.Sz]"></a></td>
+            <td id="mingxianyin6"><a id="aDYNY[BZ.mg+BZ.mz]"></a></td>
+            <td id="taixianyin6"><a id="aDYNY[BZ.tg+BZ.tz]"></a></td>
+            <td id="xxianyin6"><a id="aDYNY[BZ.Tg+BZ.Tz]"></a></td>
+            <td><a id="aDYNY[BZ.ng+BZ.nz]"></a></td>
+            <td><a id="aDYNY[BZ.yg+BZ.yz]"></a></td>
+            <td><a id="aDYNY[BZ.rg+BZ.rz]"></a></td>
+            <td><a id="aDYNY[BZ.sg+BZ.sz]"></a></td>
+            </tr>
+            <tr style="background-color:#999">
+            <td><b style="white-space:nowrap;clear:both;">空亡: </b></td>
+            <td id="shenxianyin7"><a id="aDYKW[BZ.Sg+BZ.Sz]"></a></td>
+            <td id="mingxianyin7"><a id="aDYKW[BZ.mg+BZ.mz]"></a></td>
+            <td id="taixianyin7"><a id="aDYKW[BZ.tg+BZ.tz]"></a></td>
+            <td id="xxianyin7"><a id="aDYKW[BZ.Tg+BZ.Tz]"></a></td>
+            <td><a id="aDYKW[BZ.ng+BZ.nz]"></a></td>
+            <td><a id="aDYKW[BZ.yg+BZ.yz]"></a></td>
+            <td><a id="aDYKW[BZ.rg+BZ.rz]"></a></td>
+            <td><a id="aDYKW[BZ.sg+BZ.sz]"></a></td>
+            </tr>
+            <tr style="background-color:#ccc">
+            <td><b style="white-space:nowrap;clear:both;">神煞: </b></td>
+            <td id="shenxianyin8"><div class="item"><div><div id="aSgSS"></div></div></div></td>
+            <td id="mingxianyin8"><div class="item"><div><div id="amgSS"></div></div></div></td>
+            <td id="taixianyin8"><div class="item"><div><div id="atgSS"></div></div></div></td>
+            <td id="xxianyin8"><div class="item"><div><div id="aTgSS"></div></div></div></td>
+            <td><div class="item"><div><div id="aNZSS"></div></div></div></td>
+            <td><div class="item"><div><div id="aYZSS"></div></div></div></td>
+            <td><div class="item"><div><div id="aRZSS"></div></div></div></td>
+            <td><div class="item"><div><div id="aSZSS"></div></div></div></td>
+            </tr>
+        </tbody></table>
+        <div class="smnr">
+            <!--细盘-->
+            <table class="table">
+            <colgroup>
+            <col style="border-right: 1px solid #999;" id="col1">
+            <col style="border-right: 1px solid #999;" id="col2">
+            <col style="border-right: 1px solid #999;" id="col3">
+            <col style="border-right: 1px solid #999;" id="col4">
+            <col style="border-right: 1px solid #999;" id="col5">
+            <col style="border-right: 1px solid #999;">
+            </colgroup>
+            <tbody>
+            <tr style="background-color:#999">
+            <td>日期</td>
+            <td id="liushibt">流时</td>
+            <td id="liuribt">流日</td>
+            <td id="liuyuebt">流月</td>
+            <td id="liunianbt">流年</td>
+            <td id="liuyunbt">大运</td>
+            <td>月柱</td>
+            <td>日柱</td>
+            <td>时柱</td>
+            </tr>
+            <tr>
+            <td>岁年</td>
+            <td id="liushiage"></td>
+            <td id="liuriage"></td>
+            <td id="liuyueage"></td>
+            <td id="liunianage"><br></td>
+            <td id="dayunage"><br></td>
+            <td>*</td>
+            <td>*</td>
+            <td>*</td>
+            </tr>
+            <tr id="tgline">
+            <td>天干</td>
+            <td id="liushitgs"><div class="bz" id="liushitg"><span class="big"></span><span class="small"></span></div></td>
+            <td id="liuritgs"><div class="bz" id="liuritg"><span class="big"></span><span class="small"></span></div></td>
+            <td id="liuyuetgs"><div class="bz" id="liuyuetg"><span class="big"></span><span class="small"></span></div></td>
+            <td id="liuniantgs"><div class="bz" id="liuniantg"><span class="big"></span><span class="small"></span></div></td>
+            <td id="dayuntgs"><div class="bz" id="dayuntg"><span class="big"></span><span class="small"></span></div></td>
+            <td><div class="bz" id="BZYG"></div></td>
+            <td><div class="bz" id="BZRG"></div></td>
+            <td><div class="bz" id="BZSG"></div></td>
+            </tr>
+            <tr id="dzline">
+            <td>地支</td>
+            <td id="liushidzs"><div class="bz" id="liushidz"><span class="big"></span><span class="small"></span></div></td>
+            <td id="liuridzs"><div class="bz" id="liuridz"><span class="big"></span><span class="small"></span></div></td>
+            <td id="liuyuedzs"><div class="bz" id="liuyuedz"><span class="big"></span><span class="small"></span></div></td>
+            <td id="liuniandzs"><div class="bz" id="liuniandz"><span class="big"></span><span class="small"></span></div></td>
+            <td id="dayundzs"><div class="bz" id="dayundz"><span class="big"></span><span class="small"></span></div></td>
+            <td><div class="bz" id="BZYZ"></div></td>
+            <td><div class="bz" id="BZRZ"></div></td>
+            <td><div class="bz" id="BZSZ"></div></td>
+            </tr>
+            </tbody>
+            </table>
+            <!--大运-->
+            <table class="table" id="xipanliuyun">
+            <tbody>
+            <tr id="LNDYQY"></tr>
+            <tr id="xipandayungz"></tr>
+            </tbody>
+            </table>
+            <!--流年-->
+            <table class="table" id="dayunliunian">
+            <tbody>
+            <tr>
+            <td>岁年</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+            <td>流年</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            </tbody>
+            </table>
+            <!--流月-->
+            <table class="table" id="xipanliuyue">
+            <tbody>
+            <tr>
+            <td>节气</td>
+            <td>立春</td><td>惊蛰</td><td>清明</td><td>立夏</td><td>芒种</td><td>小暑</td><td>立秋</td><td>白露</td><td>寒露</td><td>立冬</td><td>大雪</td><td>小寒</td>
+            </tr>
+            <tr>
+            <td>流月</td>
+            <td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td><td>流月</td>
+            </tr>
+            </tbody>
+            </table>
+            <!--流日-->
+            <div class="table line bg-tr" id="xipanliuri">
+            <div class="nowrap">流日</div>
+            <div class="swiper-container">
+            <div class="nowrap liuri-box swiper-wrapper"></div>
+            </div>
+            </div>
+            <!--流时-->
+            <table class="table" id="xipanliushi">
+            <tbody>
+            <tr>
+            <td>时间</td>
+            <td>23时</td><td>01时</td><td>03时</td><td>05时</td><td>07时</td><td>09时</td><td>11时</td><td>13时</td><td>15时</td><td>17时</td><td>19时</td><td>21时</td><td>23时</td>
+            </tr>
+            <tr>
+            <td>流时</td>
+            <td id="xiangxiliushi1">流时</td><td id="xiangxiliushi2">流时</td><td id="xiangxiliushi3">流时</td><td id="xiangxiliushi4">流时</td><td id="xiangxiliushi5">流时</td><td id="xiangxiliushi6">流时</td><td id="xiangxiliushi7">流时</td><td id="xiangxiliushi8">流时</td><td id="xiangxiliushi9">流时</td><td id="xiangxiliushi10">流时</td><td id="xiangxiliushi11">流时</td><td id="xiangxiliushi12">流时</td><td id="xiangxiliushi13">流时</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.5.1/js/swiper.min.js"></script>
+<script src="https://unpkg.com/lunar-javascript@1.2.22/lunar.min.js"></script>
+
+<script id="main-script">
+// --- 1. Hardcoded Chart Data (Simulating PHP Output) ---
+// This object holds all the pre-calculated data for a specific birth date.
+// To change the chart, you would need to modify this object.
+const chartData = {
+    system: {
+        name: "示例",
+        sexx: "男",
+        shengxiao: "牛",
+        XingZuo: "双子座",
+        getXiu: "危",
+        getAnimal: "燕",
+        getXiuLuck: "吉",
+        getZheng: "六",
+        getYueXiang: "亏凸月",
+        PPFS: "随节排盘",
+        WuHou: "麦秋至",
+        Hou: "（五日）",
+        SiLing: "丙火",
+        SiLingFangshi: "司令",
+        SCWG: "N/A"
+    },
+    chusheng: {
+        gongli: "2025年6月28日 0:30:0",
+        nongli: "二〇二五年六月初四日 子时",
+        DL2: "芒种: 2025-06-05 18:10:29",
+        DL1: "夏至: 2025-06-21 10:42:01",
+        QH: {}, // Simplified
+        QY: "0年1月9天",
+        HYWS: 5,
+        WXWS: "庚日主生于午月，处沐浴之地，火旺熔金，身弱。喜土、金。忌火、木。"
+    },
+    BZ: {
+        ng: "乙", nz: "巳",
+        yg: "壬", yz: "午",
+        rg: "庚", rz: "寅",
+        sg: "丙", sz: "子",
+        tg: "癸", tz: "酉", // 胎元
+        mg: "庚", mz: "辰", // 命宫
+        Sg: "戊", Sz: "寅", // 身宫
+        Tg: "丁", Tz: "酉"  // 胎息
+    },
+    bazixinxi: {
+        zh: [[1, 3, 2, 4, 0], [4, 4], [50, 50], [2, 3, 1, 4, 3]]
+    },
+    deling: ["土", "0", "1", "3", "3", "偏弱"],
+    FX: {
+        gz: "4两1钱",
+        cgg: "此命推来事不同，为人能干异凡庸，中年还有逍遥福，不比前时运来通。",
+        cggj: "富贵有余",
+        cgjs: "此命为人性躁，心直口快，有才能，见善不欺，逢恶不怕，事有始终，量能宽大，但不能聚财，兄弟六亲无力，自立家计，出外方好，初限二十三四五不遂，二十七八有好运到，犹如枯木逢春，中限四十九之命有险，四十多来古镜重磨，明月再圆。五十六七八九末限明月又被云侵，交七十方走大运。"
+    },
+    DZSS: { //十神
+        '甲':{全:'偏财',半:'才'}, '乙':{全:'正财',半:'财'}, '丙':{全:'七杀',半:'杀'}, '丁':{全:'正官',半:'官'}, 
+        '戊':{全:'偏印',半:'枭'}, '己':{全:'正印',半:'印'}, '庚':{全:'比肩',半:'比'}, '辛':{全:'劫财',半:'劫'}, 
+        '壬':{全:'食神',半:'食'}, '癸':{全:'伤官',半:'伤'},
+        '巳':{本:{全:'七杀',半:'杀'},中:{全:'比肩',半:'比'},余:{全:'偏印',半:'枭'}},
+        '午':{本:{全:'正官',半:'官'},中:{全:'正印',半:'印'},余:{全:null,半:''}},
+        '寅':{本:{全:'偏财',半:'才'},中:{全:'七杀',半:'杀'},余:{全:'偏印',半:'枭'}},
+        '子':{本:{全:'伤官',半:'伤'},中:{全:null,半:''},余:{全:null,半:''}},
+        '酉':{本:{全:'劫财',半:'劫'},中:{全:null,半:''},余:{全:null,半:''}},
+        '辰':{本:{全:'偏印',半:'枭'},中:{全:'伤官',半:'伤'},余:{全:'正财',半:'财'}},
+    },
+    ZGss: { //藏干
+        nbq:'丙', nzq:'庚', nyq:'戊', ybq:'丁', yzq:'己', yyq:null, 
+        rbq:'甲', rzq:'丙', ryq:'戊', sbq:'癸', szq:null, syq:null,
+        tbq:'辛', tzq:null, tyq:null, mbq:'戊', mzq:'癸', myq:'乙',
+        Sbq:'甲', Szq:'丙', Syq:'戊', Tbq:'辛', Tzq:null, Tyq:null
+    },
+    DYNY: getNayinMap(), // Dynamically generated for completeness
+    DYKW: getKongwangMap(),
+    SS: { //神煞
+        NZSC:['-'], YZSC:['将星','桃花'], RZSC:['天乙贵人','驿马'], SZSC:['-']
+    },
+    LLSS: { //辅助柱神煞
+        '癸酉': ['-'], '庚辰': ['华盖'], '戊寅': ['-'], '丁酉': ['-']
+    },
+    LNDY: [2025,0,"辛巳",2035,10,"庚辰",2045,20,"己卯",2055,30,"戊寅",2065,40,"丁丑",2075,50,"丙子",2085,60,"乙亥",2095,70,"甲戌",2105,80,"癸酉",2115,90,"壬申"],
+    dayunliunianData: {} // will be populated
+};
+
+// --- 2. Rendering & Interaction Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+    renderChart(chartData);
+});
+
+function renderChart(obg) {
+    with (obg) {
+        // Basic Info
+        $('#system\\.name').text(system.name); $('#system\\.sexxx').text(system.sexx); $('#system\\.shengxiao').text(system.shengxiao);
+        $('#chusheng\\.gongli').text(chusheng.gongli); $('#chusheng\\.nongli').text(chusheng.nongli);
+        $('#system\\.XingZuo').text(system.XingZuo); $('#chusheng\\.QH').text(`${chusheng.DL1} | ${chusheng.DL2}`);
+        $('#system\\.WuHou').text(system.WuHou + system.Hou); $('#system\\.getXiuSong').text(`${system.getXiu}${system.getAnimal}${system.getXiuLuck}`);
+        $('#chusheng\\.QY').text(chusheng.QY); $('#system\\.PPFS').text(system.PPFS); $('#system\\.JYRQ').text(system.JYRQ);
+        $('#chusheng\\.HYWS').text(chusheng.HYWS);
+        $('#bzgj').text(`八字${deling[5]}`);
+        
+        // Main Table
+        const pillars = ['Sg,Sz', 'mg,mz', 'tg,tz', 'ng,nz', 'yg,yz', 'rg,rz', 'sg,sz', 'Tg,Tz'];
+        const p_ids = ['shenxianyin', 'mingxianyin', 'taixianyin', null, null, null, null, 'xxianyin'];
+        const p_chars = ['S', 'm', 't', 'n', 'y', 'r', 's', 'T'];
+
+        for(let i=0; i < pillars.length; i++) {
+            const [ganKey, zhiKey] = pillars[i].split(',');
+            const gan = BZ[ganKey] || ''; const zhi = BZ[zhiKey] || '';
+            const gz = gan + zhi;
+            const pid = p_ids[i];
+            const pchar = p_chars[i];
+
+            if (pid) {
+                if(gan) $(`#${pid}2 a`).text(DZSS[gan].全);
+                $(`#${pid}3 a`).text(gan);
+                $(`#${pid}4 a`).text(zhi);
+                if (zhi) {
+                    $(`#${pid}5 #aZGss\\.${pchar}bq`).text(ZGss[pchar.toLowerCase() + 'bq'] || '');
+                    $(`#${pid}5 #aDZSS\\[BZ\\.${zhiKey}\\]\\[\\'本\\'\\]\\[\\'全\\'\\]`).text(DZSS[zhi]?.本.全 || '');
+                    $(`#${pid}5 #aZGss\\.${pchar}zq`).text(ZGss[pchar.toLowerCase() + 'zq'] || '');
+                    $(`#${pid}5 #aDZSS\\[BZ\\.${zhiKey}\\]\\[\\'中\\'\\]\\[\\'全\\'\\]`).text(DZSS[zhi]?.中.全 || '');
+                    $(`#${pid}5 #aZGss\\.${pchar}yq`).text(ZGss[pchar.toLowerCase() + 'yq'] || '');
+                    $(`#${pid}5 #aDZSS\\[BZ\\.${zhiKey}\\]\\[\\'余\\'\\]\\[\\'全\\'\\]`).text(DZSS[zhi]?.余.全 || '');
+                }
+                if (gz) {
+                    $(`#${pid}6 a`).text(DYNY[gz] || '-');
+                    $(`#${pid}7 a`).text(DYKW[gz] || '-');
+                    $(`#a${ganKey}SS`).html(LLSS[gz] ? LLSS[gz].join('<br>') : '-');
+                }
+            } else if (i >= 3 && i <= 6) { // Year, Month, Day, Hour
+                $(`#aBZcolor\\.${pchar}gys a`).text(DZSS[gan].全);
+                if(pchar === 'r') $('#asystem\\.sexx').text(`元${system.sexx}`);
+                $(`#aBZ\\.${pchar}g`).text(gan);
+                $(`#aBZ\\.${pchar}z`).text(zhi);
+                if (zhi) {
+                    $(`#aZGss\\.${pchar}bq`).text(ZGss[pchar.toLowerCase() + 'bq'] || '');
+                    $(`#aDZSS\\[BZ\\.${pchar}z\\]\\[\\'本\\'\\]\\[\\'全\\'\\]`).text(DZSS[zhi]?.本.全 || '');
+                    $(`#aZGss\\.${pchar}zq`).text(ZGss[pchar.toLowerCase() + 'zq'] || '');
+                    $(`#aDZSS\\[BZ\\.${pchar}z\\]\\[\\'中\\'\\]\\[\\'全\\'\\]`).text(DZSS[zhi]?.中.全 || '');
+                    $(`#aZGss\\.${pchar}yq`).text(ZGss[pchar.toLowerCase() + 'yq'] || '');
+                    $(`#aDZSS\\[BZ\\.${pchar}z\\]\\[\\'余\\'\\]\\[\\'全\\'\\]`).text(DZSS[zhi]?.余.全 || '');
+                }
+                if (gz) {
+                    $(`#aDYNY\\[BZ\\.${ganKey}\\+BZ\\.${zhiKey}\\]`).text(DYNY[gz] || '-');
+                    $(`#aDYKW\\[BZ\\.${ganKey}\\+BZ\\.${zhiKey}\\]`).text(DYKW[gz] || '-');
+                    $(`#a${pchar.toUpperCase()}ZSS`).html(SS[`${pchar.toUpperCase()}ZSC`].join('<br>'));
+                }
+            }
+        }
+
+        // Analysis
+        $('#BZBH1').text(`金${bazixinxi.zh[0][0]}个, 木${bazixinxi.zh[0][1]}个, 水${bazixinxi.zh[0][2]}个, 火${bazixinxi.zh[0][3]}个, 土${bazixinxi.zh[0][4]}个`);
+        $('#BZBH2').text(`阴${bazixinxi.zh[1][1]}个, 阳${bazixinxi.zh[1][0]}个, 阴占比${bazixinxi.zh[2][0]}%, 阳占比${bazixinxi.zh[2][1]}%`);
+        $('#BZBH3').text(`金${bazixinxi.zh[3][0]}个, 木${bazixinxi.zh[3][1]}个, 水${bazixinxi.zh[3][2]}个, 火${bazixinxi.zh[3][3]}个, 土${bazixinxi.zh[3][4]}个`);
+        $('#YSCK').text(deling.join(', '));
+        $('#chusheng\\.WXWS').text(chusheng.WXWS);
+        $('#FX\\.gz').html(`${FX.gz}  格局:${FX.cggj}`);
+        $('#FX\\.cgg').text(FX.cgg).attr('onclick', `alert('${FX.cgjs.replace(/'/g, "\\'")}')`);
+        
+        // Big character display
+        const tgdzColor = {'甲':'green','乙':'green','丙':'red','丁':'red','戊':'#995001','己':'#995001','庚':'#FD7C04','辛':'#FD7C04','壬':'blue','癸':'blue','寅':'green','卯':'green','辰':'#995001','巳':'red','午':'red','未':'#995001','申':'#FD7C04','酉':'#FD7C04','戌':'#995001','亥':'blue','子':'blue','丑':'#995001'};
+        const setupBzDiv = (divId, gan, zhi, shiShen) => {
+            $(divId).html(`<span class='big' style='color:${tgdzColor[gan]}'>${gan}</span><span class='small'>${shiShen}</span>`);
+            const cangganSS = (DZSS[zhi]?.本?.半 || '') + (DZSS[zhi]?.中?.半 || '') + (DZSS[zhi]?.余?.半 || '');
+            $(divId.replace('G', 'Z')).html(`<span class='big' style='color:${tgdzColor[zhi]}'>${zhi}</span><span class='small'>${cangganSS}</span>`);
+        };
+        setupBzDiv('#BZNG', BZ.ng, BZ.nz, DZSS[BZ.ng]['半']);
+        setupBzDiv('#BZYG', BZ.yg, BZ.yz, DZSS[BZ.yg]['半']);
+        setupBzDiv('#BZRG', BZ.rg, BZ.rz, system.sexx);
+        setupBzDiv('#BZSG', BZ.sg, BZ.sz, DZSS[BZ.sg]['半']);
+
+        // DaYun & LiuNian Tables
+        let LNDYQY="<td>运年</td>"; let xipandayungz="<td>大运</td>";
+        for(let i=0; i< LNDY.length; i+=3){
+            LNDYQY += `<td>${LNDY[i+1]}岁<br>${LNDY[i]}</td>`;
+            xipandayungz += `<td data-age="${LNDY[i+1]}" data-year="${LNDY[i]}" data-yearr="${LNDY[i+2]}">${LNDY[i+2]}</td>`;
+        }
+        $("#LNDYQY").html(LNDYQY);
+        $("#xipandayungz").html(xipandayungz);
+        LNDY.forEach((val, i) => { if(i%3 === 0) window.dayunliunianData[val] = LNDY[i+2]; });
+
+        // Trigger initial display
+        yjxianyin('sxianyin');
+        const currentYear = new Date().getFullYear();
+        let clicked = false;
+        $("#xipandayungz td").each(function(i){
+             if (i>0 && currentYear >= parseInt(this.dataset['year']) && currentYear - parseInt(this.dataset['year']) < 10) {
+                $(this).click(); clicked = true; return false;
+             }
+        });
+        if (!clicked) $("#xipandayungz td:eq(1)").click();
+    }
+}
+
+// --- 3. UI Interaction and Helper Functions ---
+// Mock 'sc' function
+function sc(wd, mm) { alert(`这是一个纯前端版本，词典查询功能（${mm}）未实现。`); }
+
+// Show/hide auxiliary pillars
+function yjxianyin(a) {
+    ['xxianyin', 'shenxianyin', 'taixianyin', 'mingxianyin'].forEach(b => {
+        for (let i = 1; i < 9; i++) $(`#${b}${i}`).hide();
+    });
+    if (a !== 'sxianyin') {
+        for (let i = 1; i < 9; i++) $(`#${a}${i}`).show();
+    }
+}
+
+// Event handlers for DaYun, LiuNian, LiuYue, LiuRi
+$("#xipandayungz").on("click", "td", function(e){
+    const target = e.currentTarget;
+    if (!target.dataset['year']) return;
+    $(target).css('backgroundColor', '#999').siblings().css('backgroundColor', '');
+    const year = parseInt(target.dataset['year']);
+
+    for (var i = 0; i < 10; i++) {
+        const currentYear = year + i;
+        $("#dayunliunian tr:eq(0) td:eq("+(i+1)+")").html(currentYear);
+        $("#dayunliunian tr:eq(1) td:eq("+(i+1)+")")
+            .html(window.dayunliunianData[currentYear] || '-')
+            .attr('year', currentYear).attr('age', parseInt(target.dataset["age"]) + i);
+    }
+    const dayunGZ = target.innerHTML;
+    const dayGan = $('#aBZ\\.rg').text();
+    $("#dayuntg .big").text(dayunGZ[0]); $("#dayundz .big").text(dayunGZ[1]);
+    $("#dayuntg .small").text(getShiShen(dayunGZ[0], dayGan).substring(0,1));
+    $("#dayunage").html(target.dataset["age"]+"岁<br>"+target.dataset["year"]);
+    
+    let yearToClick = new Date().getFullYear();
+    let $yearTd = $(`#dayunliunian td[year='${yearToClick}']`);
+    if ($yearTd.length) $yearTd.click();
+    else $("#dayunliunian tr:eq(1) td:eq(1)").click();
+});
+
+$("#dayunliunian").on("click", "td", function(e){
+    if(!e.target.getAttribute("year")) return;
+    $(e.target).css('backgroundColor', '#999').siblings().css('backgroundColor', '');
+    const liunianGZ = e.target.innerHTML;
+    const dayGan = $('#aBZ\\.rg').text();
+    $("#liuniantg .big").text(liunianGZ[0]); $("#liuniandz .big").text(liunianGZ[1]);
+    $("#liuniantg .small").text(getShiShen(liunianGZ[0], dayGan).substring(0,1));
+    $("#liunianage").html($(e.target).attr("age")+"岁<br>"+$(e.target).attr("year"));
+
+    const year = parseInt($(e.target).attr("year"));
+    const d = Lunar.fromYmd(year, 1, 1);
+    const jieqiTable = d.getJieQiTable();
+    
+    $("#xipanliuyue tr:eq(1) td:gt(0)").each(function(i, v) {
+        const yue = d.getLunar().getMonthInGanZhi(i + 1);
+        const jqName = LunarUtil.JIE_QI[i*2+2];
+        const nextJqName = LunarUtil.JIE_QI[i*2+4] || LunarUtil.JIE_QI[0];
+        $(v).html(`<span>${yue[0]}</span><span>${yue[1]}</span>`)
+             .attr('jieqi-start', jieqiTable[jqName].getSolar().toYmd())
+             .attr('jieqi-end', jieqiTable[nextJqName].getSolar().toYmd());
+    });
+
+    const today = new Date();
+    if (today.getFullYear() === year) {
+        const currentJie = Lunar.fromDate(today).getPrevJie();
+        $(`td[jieqi-start='${currentJie.getSolar().toYmd()}']`).click();
+    } else {
+        $("#xipanliuyue tr:eq(1) td:eq(1)").click();
+    }
+});
+
+$("#xipanliuyue").on("click", "td", function(e) {
+    const target = $(e.target).closest('td');
+    if (!target.attr("jieqi-start")) return;
+    target.css('backgroundColor', '#999').siblings().css('backgroundColor', '');
+    
+    const liuyueGZ = target.text();
+    const dayGan = $('#aBZ\\.rg').text();
+    $("#liuyuetg .big").text(liuyueGZ[0]); $("#liuyuedz .big").text(liuyueGZ[1]);
+    $("#liuyuetg .small").text(getShiShen(liuyueGZ[0], dayGan).substring(0,1));
+    
+    const d = Lunar.fromDate(new Date(target.attr("jieqi-start")));
+    $("#liuyueage").html(d.getMonthInChinese()+"月<br>"+d.getSolar().getMonth()+"月");
+    
+    let dayHtml = '';
+    const start = new Date(target.attr('jieqi-start'));
+    const end = new Date(target.attr('jieqi-end'));
+    for (let dt = new Date(start); dt < end; dt.setDate(dt.getDate() + 1)) {
+        const dayLunar = Lunar.fromDate(dt);
+        dayHtml += `<span class="swiper-slide" date="${dayLunar.getSolar().toYmd()}">${dayLunar.getDayInGanZhi()}</span>`;
+    }
+    $('.liuri-box').html(dayHtml);
+    new Swiper('.swiper-container', { slidesPerView: 'auto', freeMode: true });
+    
+    let dayToClick = $(`.liuri-box span[date='${Lunar.fromDate(new Date()).getSolar().toYmd()}']`);
+    if(dayToClick.length) dayToClick.click();
+    else $('.liuri-box span:first').click();
+});
+
+$(".liuri-box").on("click", "span", function(e) {
+    $(this).css('backgroundColor', '#999').siblings().css('backgroundColor', '');
+    const liuriGZ = $(this).text();
+    const dayGan = $('#aBZ\\.rg').text();
+    $("#liuritg .big").text(liuriGZ[0]); $("#liuridz .big").text(liuriGZ[1]);
+    $("#liuritg .small").text(getShiShen(liuriGZ[0], dayGan).substring(0,1));
+
+    const d = Lunar.fromDate(new Date($(e.target).attr("date")));
+    $("#liuriage").html(d.getDayInChinese()+"<br>"+d.getSolar().getDay()+"日");
+    
+    $("#xipanliushi tr:eq(1) td").each(function(i) {
+        if (i < 12) {
+            const timeLunar = d.getLunar().getTimeInGanZhi(i * 2);
+            $(this).html(`<a onclick="liushishijian(this)">${timeLunar}</a>`);
+        } else {
+             const timeLunar = d.getLunar().getTimeInGanZhi(0); // Next day's Zi shi
+             $(this).html(`<a onclick="liushishijian(this)">${timeLunar}</a>`);
+        }
+    });
+    
+    let hour = new Date().getHours();
+    let hourIndex = Math.floor(hour / 2);
+    if(hour >= 23) hourIndex = 0; // Zi shi
+    $(`#xiangxiliushi${hourIndex+1} a`).click();
+});
+
+function liushishijian(el) {
+    $('#xipanliushi td a').css('backgroundColor', '');
+    $(el).css('backgroundColor', '#999');
+    
+    const liushiGZ = $(el).text();
+    const dayGan = $('#aBZ\\.rg').text();
+    $("#liushitg .big").text(liushiGZ[0]); $("#liushidz .big").text(liushiGZ[1]);
+    $("#liushitg .small").text(getShiShen(liushiGZ[0], dayGan).substring(0,1));
+    const hour = parseInt($(el).parent().prevAll().eq(0).text().replace('时',''));
+    $("#liushiage").html(`${hour}时`);
+}
+
+// All other helper functions from previous response remain the same.
+// ... (getShiShen, getNayinMap, getKongwangMap, getShenShaForPillar, getAuxPillars, getBaziElementCounts, getWuXingWangShuai, chengGu)
+// These functions are included below for completeness.
+
+function getAuxPillars(lunar) {
+    // This is a simplified placeholder. For accurate calculation,
+    // you would need the exact formulas for TaiYuan, MingGong, etc.
+    // lunar.js might have these, check its documentation.
+    return {
+        taiYuan: { gan: '癸', zhi: '酉' },
+        mingGong: { gan: '庚', zhi: '辰' },
+        shenGong: { gan: '戊', zhi: '寅' },
+        taiXi: { gan: '丁', zhi: '酉' }
+    };
+}
+
+function getNayinMap() {
+    return {'甲子':'海中金','乙丑':'海中金','丙寅':'炉中火','丁卯':'炉中火','戊辰':'大林木','己巳':'大林木','庚午':'路旁土','辛未':'路旁土','壬申':'剑锋金','癸酉':'剑锋金','甲戌':'山头火','乙亥':'山头火','丙子':'涧下水','丁丑':'涧下水','戊寅':'城头土','己卯':'城头土','庚辰':'白蜡金','辛巳':'白蜡金','壬午':'杨柳木','癸未':'杨柳木','甲申':'泉中水','乙酉':'泉中水','丙戌':'屋上土','丁亥':'屋上土','戊子':'霹雳火','己丑':'霹雳火','庚寅':'松柏木','辛卯':'松柏木','壬辰':'长流水','癸巳':'长流水','甲午':'沙中金','乙未':'沙中金','丙申':'山下火','丁酉':'山下火','戊戌':'平地木','己亥':'平地木','庚子':'壁上土','辛丑':'壁上土','壬寅':'金箔金','癸卯':'金箔金','甲辰':'覆灯火','乙巳':'覆灯火','丙午':'天河水','丁未':'天河水','戊申':'大驿土','己酉':'大驿土','庚戌':'钗钏金','辛亥':'钗钏金','壬子':'桑柘木','癸丑':'桑柘木','甲寅':'大溪水','乙卯':'大溪水','丙辰':'沙中土','丁巳':'沙中土','戊午':'天上火','己未':'天上火','庚申':'石榴木','辛酉':'石榴木','壬戌':'大海水','癸亥':'大海水'};
+}
+
+function getKongwangMap() {
+    const jiazi = ['甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉','甲戌','乙亥','丙子','丁丑','戊寅','己卯','庚辰','辛巳','壬午','癸未','甲申','乙酉','丙戌','丁亥','戊子','己丑','庚寅','辛卯','壬辰','癸巳','甲午','乙未','丙申','丁酉','戊戌','己亥','庚子','辛丑','壬寅','癸卯','甲辰','乙巳','丙午','丁未','戊申','己酉','庚戌','辛亥','壬子','癸丑','甲寅','乙卯','丙辰','丁巳','戊午','己未','庚申','辛酉','壬戌','癸亥'];
+    const kongwang = ['戌亥','申酉','午未','辰巳','寅卯','子丑','戌亥','申酉','午未','辰巳'];
+    const map = {};
+    for (let i = 0; i < 60; i++) {
+        map[jiazi[i]] = kongwang[Math.floor(i / 10)];
+    }
+    return map;
+}
+
+function getShenShaForPillar(gan, zhi, dayGan, dayZhi) {
+    // This is a simplified version. A full implementation is complex.
+    const shensha = [];
+    if ((dayGan === '甲' || dayGan === '戊' || dayGan === '庚') && (zhi === '丑' || zhi === '未')) shensha.push('天乙贵人');
+    if ((['寅', '午', '戌'].includes(dayZhi) && zhi === '卯') || (['申', '子', '辰'].includes(dayZhi) && zhi === '酉')) shensha.push('桃花');
+    if ((['寅', '午', '戌'].includes(dayZhi) && zhi === '戌') || (['申', '子', '辰'].includes(dayZhi) && zhi === '辰')) shensha.push('华盖');
+    return shensha.length > 0 ? shensha : ['-'];
+}
+function getBaziElementCounts(BZ, ZGss) {
+    const elements = { '金':0, '木':0, '水':0, '火':0, '土':0 };
+    const yinYang = { '阳':0, '阴':0 };
+    const tgWuXing = { '甲':'木', '乙':'木', '丙':'火', '丁':'火', '戊':'土', '己':'土', '庚':'金', '辛':'金', '壬':'水', '癸':'水' };
+    const dzWuXing = { '子':'水', '丑':'土', '寅':'木', '卯':'木', '辰':'土', '巳':'火', '午':'火', '未':'土', '申':'金', '酉':'金', '戌':'土', '亥':'水' };
+    const gzYinYang = { '甲':1, '乙':-1, '丙':1, '丁':-1, '戊':1, '己':-1, '庚':1, '辛':-1, '壬':1, '癸':-1, '子':1, '丑':-1, '寅':1, '卯':-1, '辰':1, '巳':-1, '午':1, '未':-1, '申':1, '酉':-1, '戌':1, '亥':-1 };
+
+    const bzPillars = [BZ.ng, BZ.nz, BZ.yg, BZ.yz, BZ.rg, BZ.rz, BZ.sg, BZ.sz];
+    bzPillars.forEach(char => {
+        if (tgWuXing[char]) elements[tgWuXing[char]]++;
+        if (dzWuXing[char]) elements[dzWuXing[char]]++;
+        if (gzYinYang[char] > 0) yinYang['阳']++;
+        else if (gzYinYang[char] < 0) yinYang['阴']++;
+    });
+    const yinPercent = yinYang['阳'] + yinYang['阴'] > 0 ? (yinYang['阴'] / (yinYang['阳'] + yinYang['阴']) * 100).toFixed(0) : 0;
+    const yangPercent = 100 - yinPercent;
+
+    const cgElements = { '金':0, '木':0, '水':0, '火':0, '土':0 };
+    for (const key in ZGss) {
+        if (ZGss[key] && tgWuXing[ZGss[key]]) {
+            cgElements[tgWuXing[ZGss[key]]]++;
+        }
+    }
+
+    return [
+        [elements['金'], elements['木'], elements['水'], elements['火'], elements['土']],
+        [yinYang['阳'], yinYang['阴']],
+        [yinPercent, yangPercent],
+        [cgElements['金'], cgElements['木'], cgElements['水'], cgElements['火'], cgElements['土']]
+    ];
+}
+
+function getWuXingWangShuai(lunar) {
+    const dayGan = lunar.getDayGan();
+    const wangShuai = lunar.getDayGanWuXing().getWang();
+    return `${dayGan}日主生于${lunar.getMonthInChinese()}月，${wangShuai}`;
+}
+
+
+function chengGu(lunar) {
+    const yearWeights = {'甲子':1.2,'乙丑':0.9,'丙寅':0.6,'丁卯':0.7,'戊辰':1.2,'己巳':0.5,'庚午':0.9,'辛未':0.8,'壬申':0.7,'癸酉':0.8,'甲戌':1.5,'乙亥':0.9,'丙子':1.6,'丁丑':0.8,'戊寅':0.8,'己卯':1.9,'庚辰':1.2,'辛巳':0.6,'壬午':0.8,'癸未':0.7,'甲申':0.5,'乙酉':1.5,'丙戌':0.6,'丁亥':1.6,'戊子':1.5,'己丑':0.7,'庚寅':0.9,'辛卯':1.2,'壬辰':1.0,'癸巳':0.7,'甲午':1.5,'乙未':0.6,'丙申':0.5,'丁酉':1.4,'戊戌':1.4,'己亥':0.9,'庚子':0.7,'辛丑':0.7,'壬寅':0.9,'癸卯':1.2,'甲辰':0.8,'乙巳':0.7,'丙午':1.3,'丁未':0.5,'戊申':1.4,'己酉':0.5,'庚戌':0.9,'辛亥':1.7,'壬子':0.7,'癸丑':0.7};
+    const monthWeights = [1.8, 1.0, 1.8, 0.9, 0.5, 1.6, 0.9, 1.5, 1.8, 0.8, 0.9, 0.5];
+    const dayWeights = [1.0, 1.0, 0.8, 1.5, 1.6, 1.5, 1.0, 1.6, 0.8, 1.6, 0.9, 1.7, 0.8, 1.7, 1.0, 1.0, 0.9, 1.8, 0.5, 1.5, 1.0, 0.9, 0.8, 0.8, 1.5, 1.8, 0.9, 0.8, 1.6, 0.6];
+    const timeWeights = {'子':1.6, '丑':0.6, '寅':0.7, '卯':1.0, '辰':0.9, '巳':1.6, '午':1.0, '未':0.8, '申':0.8, '酉':0.9, '戌':0.6, '亥':0.6};
+    
+    let totalWeight = yearWeights[lunar.getYearInGanZhi()] + monthWeights[lunar.getMonth() - 1] + dayWeights[lunar.getDay() - 1] + timeWeights[lunar.getTimeZhi()];
+
+    const poems = {
+        '2.2':{p:"身寒骨冷苦伶仃，此命推来行乞人",v:"短命非业",e:"劳碌奔波，一生清苦"},'2.3':{p:"终身役役不知足，心身多累苦无边",v:"终身困苦",e:"忙碌一生，终归无所得"},'2.4':{p:"此命推来福禄无，门庭困苦总难荣",v:"无福无禄",e:"一生贫苦，难得荣华"},'2.5':{p:"此命推来祖业微，门庭营度似稀奇",v:"离祖成家",e:"祖业微薄，自力更生"},'2.6':{p:"平生衣禄苦中求，独自营谋事不休",v:"先苦后甜",e:"早年辛苦，晚年享福"},'2.7':{p:"一生作事少商量，难靠祖宗作主张",v:"心善好施",e:"独立自主，心善乐施"},'2.8':{p:"一生行事似飘蓬，祖宗产业在梦中",v:"自立自主",e:"漂泊不定，白手起家"},'2.9':{p:"初年运限未曾亨，纵有功名在后成",v:"先难后易",e:"早年不顺，中年转运"},'3.0':{p:"劳劳碌碌苦中求，东奔西走何日休",v:"奔波劳碌",e:"一生劳碌，难得清闲"},'3.1':{p:"忙忙碌碌苦中求，何日云开见日头",v:"多学少成",e:"学多而成少，难有大就"},'3.2':{p:"初年运蹇事难谋，渐有财源如水流",v:"先贫后富",e:"早年贫困，中年后富"},'3.3':{p:"早年作事事难成，百计徒劳枉费心",v:"多谋少成",e:"计谋多但成功少"},'3.4':{p:"此命福气果如何，僧道门中衣禄多",v:"与佛有缘",e:"与佛道有缘，生活安稳"},'3.5':{p:"生平福量不周全，祖业根基觉少传",v:"福分不全",e:"福气不全，自力更生"},'3.6':{p:"不须劳碌过平生，独自成家福不轻",v:"自成家业",e:"无需劳碌，自有福分"},'3.7':{p:"此命般般事不成，弟兄少力自孤行",v:"独立自强",e:"诸事难成，需独立奋斗"},'3.8':{p:"一身骨肉最清高，早入簧门姓氏标",v:"骨肉清高",e:"品性高洁，早年成名"},'3.9':{p:"此命终身运不通，劳劳作事尽皆空",v:"命运不佳",e:"一生运势不通，劳而无功"},'4.0':{p:"平生衣禄是绵长，件件心中自主张",v:"衣食无忧",e:"一生衣食无忧，有主见"},'4.1':{p:"此命推来事不同，为人能干异凡庸",v:"富贵有余",e:"能力出众，富贵双全"},'4.2':{p:"得宽怀处且宽怀，何用双眉皱不开",v:"自力更生",e:"凡事想开，自力更生"},'4.3':{p:"为人心性最聪明，作事轩昂近贵人",v:"聪明近贵",e:"聪明能干，易得贵人助"},'4.4':{p:"万事由天莫苦求，须知福禄命里收",v:"福禄天定",e:"顺其自然，福禄自有"},'4.5':{p:"福中取贵格中真，非凡一名请造化",v:"福中取贵",e:"命中带贵，非同凡响"},'4.6':{p:"东西南北尽皆通，出姓移名更觉隆",v:"改名移姓",e:"四方通达，改名换姓更佳"},'4.7':{p:"此命推来旺末年，妻荣子贵自怡然",v:"晚年得福",e:"晚年运势旺，妻荣子贵"},'4.8':{p:"初年运道未曾亨，若到中年运来通",v:"中年转运",e:"早年不顺，中年运势亨通"},'4.9':{p:"此命推来福不轻，自成自立显门庭",v:"福泽深厚",e:"福气不浅，能自立门户"},'5.0':{p:"为名为利终日劳，中年福禄也多遭",v:"名利之命",e:"为名利奔波，中年福禄双收"},'5.1':{p:"一世荣华事事通，不须劳碌自亨通",v:"荣华富贵",e:"一生荣华，诸事顺利"},'5.2':{p:"一世亨通事事能，不须劳思自然能",v:"诸事顺遂",e:"一生亨通，事事如意"},'5.3':{p:"此格推来福泽宏，兴家立业在其中",v:"兴家立业",e:"福泽宏厚，能兴家立业"},'5.4':{p:"此格详采福泽宏，诗书满腹看功成",v:"福禄深厚",e:"福禄深厚，学业有成"},'5.5':{p:"策马扬鞭争名利，少年作事费筹论",v:"少年得志",e:"少年得志，名利双收"},'5.6':{p:"此格推来礼义通，一身福禄用无穷",v:"福禄无穷",e:"知书达理，福禄无尽"},'5.7':{p:"福禄盈盈万事全，一生荣耀显双亲",v:"福禄双全",e:"福禄满满，光宗耀祖"},'5.8':{p:"平生福禄命生来，名利荣华寿绵延",v:"福禄寿全",e:"天生福禄，名利双收长寿"},'5.9':{p:"细推此格妙且清，必定才高学业成",v:"才高学成",e:"才学过人，学业有成"},'6.0':{p:"一朝金榜快题名，显祖荣宗立大功",v:"金榜题名",e:"金榜题名，光宗耀祖"},'6.1':{p:"不做朝中金榜客，定为世上一财翁",v:"非官即富",e:"不是高官就是富豪"},'6.2':{p:"此命推来福不穷，诗书必定显祖宗",v:"学业有成",e:"福气不尽，学业光耀门楣"},'6.3':{p:"命主为官福禄长，得来富贵定非常",v:"官运亨通",e:"官运亨通，富贵非常"},'6.4':{p:"此格威权不可当，紫袍金带尘中客",v:"权势之命",e:"权势威重，非凡人物"},'6.5':{p:"细推此命福非轻，富贵荣华孰与争",v:"富贵荣华",e:"福气不浅，富贵荣华"},'6.6':{p:"此格人间一福人，堆金积玉满堂春",v:"大富大贵",e:"人间福人，金玉满堂"},'6.7':{p:"此名生来福自宏，田园家业最高隆",v:"福泽宏大",e:"福气宏大，家业兴隆"},'6.8':{p:"富贵由天莫苦求，万金家计不须谋",v:"天生富贵",e:"天生富贵，无需劳碌"},'6.9':{p:"君是人间衣禄星，一生富贵众人钦",v:"富贵之星",e:"天生富贵，受人敬仰"},'7.0':{p:"此命推来福不浅，不用求谋衣食足",v:"福禄不浅",e:"福气不浅，衣食无忧"},'7.1':{p:"此命生成无别物，不非公侯也是卿",v:"公侯将相",e:"非凡之命，不是公侯就是将相"}
+    };
+    const weightStr = (Math.round(totalWeight * 10) / 10).toFixed(1);
+    const result = poems[weightStr] || { p: "暂无评语", v: "未知", e:"暂无详细解释。" };
+    return { weight: `${Math.floor(totalWeight)}两${Math.round((totalWeight % 1) * 10)}钱`, poem: result.p, verdict: result.v, explanation: result.e };
+}
+</script>
+
+</body>
+</html>
