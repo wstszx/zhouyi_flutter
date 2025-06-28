@@ -73,24 +73,43 @@ class AstrolabeScreen extends StatelessWidget {
       key: const ValueKey(0),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
+        extentRatio: 0.5,
         children: [
-          SlidableAction(
-            onPressed: (context) {
-              // TODO: Implement delete action
-            },
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: '删除',
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: SlidableAction(
+                onPressed: (context) {
+                  // TODO: Implement delete action
+                },
+                backgroundColor: const Color(0xFFFE6464),
+                foregroundColor: Colors.white,
+                icon: Icons.delete,
+                label: '删除',
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+            ),
           ),
-          SlidableAction(
-            onPressed: (context) {
-              // TODO: Implement edit action
-            },
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            icon: Icons.edit,
-            label: '编辑',
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: SlidableAction(
+                onPressed: (context) {
+                  // TODO: Implement edit action
+                },
+                backgroundColor: const Color(0xFF8B4513),
+                foregroundColor: Colors.white,
+                icon: Icons.edit,
+                label: '编辑',
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -99,6 +118,7 @@ class AstrolabeScreen extends StatelessWidget {
         elevation: 0,
         margin: const EdgeInsets.only(bottom: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
