@@ -4,6 +4,7 @@ import 'bind_alipay_screen.dart';
 import 'edit_opinion_screen.dart';
 import 'feedback_screen.dart';
 import 'version_info_screen.dart';
+import 'vip_purchase_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -67,7 +68,12 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const Text('VIP会员 ¥398', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B4513))),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const VipPurchaseScreen()),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF8B4513),
               foregroundColor: Colors.white,
