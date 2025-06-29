@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:flutter/services.dart';
 
 class PaipanResultScreen extends StatefulWidget {
   const PaipanResultScreen({super.key});
@@ -45,9 +44,8 @@ Page resource error:
     _loadHtmlFromAssets();
   }
 
-  _loadHtmlFromAssets() async {
-    String fileText = await rootBundle.loadString('assets/images/paipan.html');
-    _controller.loadHtmlString(fileText);
+  _loadHtmlFromAssets() {
+    _controller.loadFlutterAsset('assets/bazi_platform_files.html');
   }
 
   @override

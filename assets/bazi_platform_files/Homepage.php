@@ -1,0 +1,1 @@
+document.getElementById('dtlnys').innerHTML='<br><br>';document.getElementById('nbtsc').innerHTML='';
