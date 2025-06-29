@@ -71,7 +71,7 @@ flutter:
     - assets/images/
     - assets/bazi_platform_files.html
     - assets/bazi_platform_files/
-    - divination_response.json
+    - assets/divination_response.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
