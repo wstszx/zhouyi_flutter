@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'consumption_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -80,7 +81,12 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-          _buildMenuListItem(context, Icons.receipt_long, '消费记录', () {}),
+          _buildMenuListItem(context, Icons.receipt_long, '消费记录', () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ConsumptionHistoryScreen()),
+            );
+          }),
           _buildMenuListItem(context, Icons.payment, '绑定修改支付宝/实名', () {}),
           _buildMenuListItem(context, Icons.edit, '修改个人意见', () {}),
           _buildMenuListItem(context, Icons.feedback_outlined, '意见反馈', () {}),
