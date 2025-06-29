@@ -5,6 +5,7 @@ import 'edit_opinion_screen.dart';
 import 'feedback_screen.dart';
 import 'version_info_screen.dart';
 import 'vip_purchase_screen.dart';
+import 'message_center_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -48,7 +49,12 @@ class ProfileScreen extends StatelessWidget {
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.mail_outline, size: 30),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MessageCenterScreen()),
+              );
+            },
           ),
         ],
       ),
