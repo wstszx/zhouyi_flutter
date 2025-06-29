@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'consumption_history_screen.dart';
+import 'bind_alipay_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -87,7 +88,12 @@ class ProfileScreen extends StatelessWidget {
               MaterialPageRoute(builder: (context) => const ConsumptionHistoryScreen()),
             );
           }),
-          _buildMenuListItem(context, Icons.payment, '绑定修改支付宝/实名', () {}),
+          _buildMenuListItem(context, Icons.payment, '绑定修改支付宝/实名', () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BindAlipayScreen()),
+            );
+          }),
           _buildMenuListItem(context, Icons.edit, '修改个人意见', () {}),
           _buildMenuListItem(context, Icons.feedback_outlined, '意见反馈', () {}),
           _buildMenuListItem(context, Icons.info_outline, '版本说明/更新', () {}),
