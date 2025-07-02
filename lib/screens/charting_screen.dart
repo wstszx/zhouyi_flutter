@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:zhouyi/screens/paipan_result_screen.dart';
 import 'package:zhouyi/services/api_service.dart';
@@ -79,87 +80,150 @@ class _ChartingScreenState extends State<ChartingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('新建排盘', style: TextStyle(color: Color(0xFF8B4513))),
-        backgroundColor: const Color(0xFFFDEBEB),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF8B4513)),
-      ),
-      body: Container(
-        color: const Color(0xFFFDEBEB).withOpacity(0.5),
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            _buildTextField(context, '姓名', '请输入姓名', _nameController),
-            _buildDropdownField(context, '性别', ['男', '女']),
-            _buildDateField(context, '生辰', '年、月、日、时'),
-            const SizedBox(height: 16),
-            _buildLocationSection(),
-            const SizedBox(height: 40),
-            _buildActionButton(context, '排盘', () async {
-              if (_nameController.text.isNotEmpty && _selectedDate != null) {
-                try {
-                  // 显示加载对话框
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-
-                  final apiService = ApiService();
-
-                  // 格式化日期
-                  final dateFormat = _isGregorian ? '公历' : '农历';
-                  final formattedDate = '$dateFormat${DateFormat('yyyy年MM月dd日 HH时mm分').format(_selectedDate!)}';
-
-                  // 调用API，包含地理位置参数
-                  final result = await apiService.getDivinationResult(
-                    name: _nameController.text,
-                    sex: _selectedGender == '男' ? 0 : 1,
-                    inputDate: formattedDate,
-                    // 地理位置参数
-                    city1: _selectedProvince,
-                    city2: _selectedCity,
-                    city3: _selectedDistrict,
-                    // 其他参数使用默认值
-                    sect: 2, // 晚子时按当天
-                    maxts: 5, // 大运5轮
-                    siling: 0, // 四柱信息标识
-                  );
-
-                  // 关闭加载对话框
-                  if (mounted) Navigator.pop(context);
-
-                  // 跳转到结果页面 - 使用新的改进版本
-                  if (mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => PaipanResultScreen(result: result)),
+      body: Stack(
+        children: [
+          // 背景图片
+          SvgPicture.asset(
+            'assets/images/background_gradient.svg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          ListView(
+            padding: const EdgeInsets.all(24.0),
+            children: [
+              const SizedBox(height: 80),
+              const Center(
+                child: Text(
+                  '新建排盘',
+                  style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8B4513)),
+                ),
+              ),
+              const SizedBox(height: 40),
+              _buildTextField(context, '姓名', '请输入姓名', _nameController),
+              _buildDropdownField(context, '性别', ['男', '女']),
+              _buildDateField(context, '生辰', '年、月、日、时'),
+              const SizedBox(height: 24),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 4.0, left: 4.0),
+                child: Text(
+                  '地理位置（用于真太阳时计算）',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF8B4513),
+                  ),
+                ),
+              ),
+              _buildLocationDropdown('省/市', _selectedProvince, _provinces.keys.toList(), (value) {
+                setState(() {
+                  _selectedProvince = value;
+                  _selectedCity = null;
+                  _selectedDistrict = null;
+                });
+              }),
+              if (_selectedProvince != null)
+                _buildLocationDropdown('城市', _selectedCity, _provinces[_selectedProvince!] ?? [], (value) {
+                  setState(() {
+                    _selectedCity = value;
+                    _selectedDistrict = null;
+                  });
+                }),
+              if (_selectedCity != null && _districts.containsKey(_selectedCity!))
+                _buildLocationDropdown('区/县', _selectedDistrict, _districts[_selectedCity!] ?? [], (value) {
+                  setState(() {
+                    _selectedDistrict = value;
+                  });
+                }),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Text(
+                  '提示：选择地理位置可提高时间计算精度',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              _buildActionButton(context, '排盘', () async {
+                if (_nameController.text.isNotEmpty && _selectedDate != null) {
+                  try {
+                    // 显示加载对话框
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
                     );
-                  }
 
-                } catch (e, s) {
-                  // 关闭加载对话框
-                  if (mounted) Navigator.pop(context);
+                    final apiService = ApiService();
 
-                  debugPrint('排盘失败: $e');
-                  debugPrint('堆栈跟踪: $s');
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('排盘失败: $e')),
+                    // 格式化日期
+                    final dateFormat = _isGregorian ? '公历' : '农历';
+                    final formattedDate = '$dateFormat${DateFormat('yyyy年MM月dd日 HH时mm分').format(_selectedDate!)}';
+
+                    // 调用API，包含地理位置参数
+                    final result = await apiService.getDivinationResult(
+                      name: _nameController.text,
+                      sex: _selectedGender == '男' ? 0 : 1,
+                      inputDate: formattedDate,
+                      // 地理位置参数
+                      city1: _selectedProvince,
+                      city2: _selectedCity,
+                      city3: _selectedDistrict,
+                      // 其他参数使用默认值
+                      sect: 2, // 晚子时按当天
+                      maxts: 5, // 大运5轮
+                      siling: 0, // 四柱信息标识
                     );
+
+                    // 关闭加载对话框
+                    if (mounted) Navigator.pop(context);
+
+                    // 跳转到结果页面 - 使用新的改进版本
+                    if (mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PaipanResultScreen(result: result)),
+                      );
+                    }
+
+                  } catch (e, s) {
+                    // 关闭加载对话框
+                    if (mounted) Navigator.pop(context);
+
+                    debugPrint('排盘失败: $e');
+                    debugPrint('堆栈跟踪: $s');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('排盘失败: $e')),
+                      );
+                    }
                   }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('请输入完整的姓名和生辰')),
+                  );
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('请输入完整的姓名和生辰')),
-                );
-              }
-            }),
-          ],
-        ),
+              }),
+            ],
+          ),
+          // 返回按钮
+          Positioned(
+            top: 40,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF8B4513)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -176,10 +240,19 @@ class _ChartingScreenState extends State<ChartingScreen> {
               decoration: InputDecoration(
                 hintText: hint,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
+                hintStyle: TextStyle(color: Colors.grey[600]),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12.0),
                   borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
                 ),
               ),
             ),
@@ -199,10 +272,18 @@ class _ChartingScreenState extends State<ChartingScreen> {
             child: DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12.0),
                   borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
                 ),
               ),
               value: items.first,
@@ -232,24 +313,32 @@ class _ChartingScreenState extends State<ChartingScreen> {
           SizedBox(width: 80, child: Text(label, style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513)))),
           Expanded(
             child: InkWell(
-              onTap: () => _showDatePicker(context),
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
+              onTap: () => _selectDate(context),
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: TextEditingController(
+                    text: _selectedDate == null
+                        ? ''
+                        : DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate!),
                   ),
-                ),
-                child: Text(
-                  _selectedDate == null
-                      ? hint
-                      : DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate!),
-                  style: TextStyle(
-                      color: _selectedDate == null
-                          ? Colors.grey.shade600
-                          : Colors.black),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    filled: true,
+                    fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -259,93 +348,75 @@ class _ChartingScreenState extends State<ChartingScreen> {
     );
   }
 
-  void _showDatePicker(BuildContext context) {
-    DateTime initialDate = _selectedDate ?? DateTime.now();
-    DateTime tempDate = initialDate;
-    bool isGregorian = _isGregorian;
+  Future<void> _selectDate(BuildContext context) async {
+    DateTime? pickedDate = _selectedDate ?? DateTime(1990, 1, 1);
+    int tempCalendar = _isGregorian ? 0 : 1;
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       builder: (BuildContext builder) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              height: MediaQuery.of(context).copyWith().size.height / 2.5,
-              color: Colors.white,
+            return SizedBox(
+              height: 350,
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                      children: <Widget>[
                         CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          child: const Text('取消', style: TextStyle(color: Colors.grey)),
-                          onPressed: () => Navigator.pop(context),
+                          child: const Text('取消'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
                         ),
                         Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CupertinoButton(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: Text('公历', style: TextStyle(color: isGregorian ? Colors.brown : Colors.grey)),
-                                onPressed: () {
-                                  setModalState(() {
-                                    isGregorian = true;
-                                  });
-                                },
-                              ),
-                              CupertinoButton(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: Text('农历', style: TextStyle(color: !isGregorian ? Colors.brown : Colors.grey)),
-                                onPressed: () {
-                                  setModalState(() {
-                                    isGregorian = false;
-                                  });
-                                },
-                              ),
-                            ],
+                          child: CupertinoSlidingSegmentedControl<int>(
+                            groupValue: tempCalendar,
+                            children: const <int, Widget>{
+                              0: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text('公历')),
+                              1: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text('农历')),
+                            },
+                            onValueChanged: (int? value) {
+                              if (value != null) {
+                                setModalState(() {
+                                  tempCalendar = value;
+                                });
+                              }
+                            },
                           ),
                         ),
                         CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          child: const Text('今天', style: TextStyle(color: Colors.brown)),
+                          child: const Text('确定'),
                           onPressed: () {
                             setState(() {
-                              _selectedDate = DateTime.now();
+                              _selectedDate = pickedDate;
+                              _isGregorian = tempCalendar == 0;
                             });
-                            Navigator.pop(context);
+                            Navigator.of(context).pop();
                           },
                         ),
                       ],
                     ),
                   ),
                   SizedBox(
-                    height: 200,
+                    height: 250,
                     child: CupertinoDatePicker(
                       mode: CupertinoDatePickerMode.dateAndTime,
-                      initialDateTime: initialDate,
+                      initialDateTime: pickedDate,
+                      minimumDate: DateTime(1900),
+                      maximumDate: DateTime.now(),
                       onDateTimeChanged: (DateTime newDate) {
-                        tempDate = newDate;
+                        pickedDate = newDate;
                       },
                       use24hFormat: true,
                       minuteInterval: 1,
-                    ),
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: Colors.black,
-                      child: const Text('确定'),
-                      onPressed: () {
-                        setState(() {
-                          _selectedDate = tempDate;
-                          _isGregorian = isGregorian;
-                        });
-                        Navigator.pop(context);
-                      },
                     ),
                   ),
                 ],
@@ -372,96 +443,51 @@ class _ChartingScreenState extends State<ChartingScreen> {
     );
   }
 
-  Widget _buildLocationSection() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '地理位置（用于真太阳时计算）',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF8B4513),
-              ),
+  Widget _buildLocationDropdown(String label, String? selectedValue, List<String> items, ValueChanged<String?> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513)),
             ),
-            const SizedBox(height: 12),
-            _buildLocationDropdown('省/直辖市', _selectedProvince, _provinces.keys.toList(), (value) {
-              setState(() {
-                _selectedProvince = value;
-                _selectedCity = null; // 重置市
-                _selectedDistrict = null; // 重置区县
-              });
-            }),
-            if (_selectedProvince != null) ...[
-              const SizedBox(height: 8),
-              _buildLocationDropdown('市', _selectedCity, _provinces[_selectedProvince!] ?? [], (value) {
-                setState(() {
-                  _selectedCity = value;
-                  _selectedDistrict = null; // 重置区县
-                });
-              }),
-            ],
-            if (_selectedCity != null && _districts.containsKey(_selectedCity!)) ...[
-              const SizedBox(height: 8),
-              _buildLocationDropdown('区/县', _selectedDistrict, _districts[_selectedCity!] ?? [], (value) {
-                setState(() {
-                  _selectedDistrict = value;
-                });
-              }),
-            ],
-            const SizedBox(height: 8),
-            Text(
-              '提示：选择地理位置可提高时间计算精度',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+          ),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                ),
               ),
+              value: selectedValue,
+              hint: Text('请选择$label'),
+              isExpanded: true,
+              items: items.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value, overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
+              onChanged: onChanged,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-
-  Widget _buildLocationDropdown(String label, String? selectedValue, List<String> items, ValueChanged<String?> onChanged) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF8B4513)),
-          ),
-        ),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            value: selectedValue,
-            hint: Text('请选择$label'),
-            items: items.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value, style: const TextStyle(fontSize: 14)),
-              );
-            }).toList(),
-            onChanged: onChanged,
-          ),
-        ),
-      ],
-    );
-  }
-
 }
