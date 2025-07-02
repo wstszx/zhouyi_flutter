@@ -532,103 +532,12 @@ class ApiService {
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
-      // Save the response to a file
-      try {
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/divination_response.json');
-        // The response body is a string, so we need to decode it from UTF8
-        // then re-encode it to a formatted JSON string.
-        final jsonResponse = jsonDecode(utf8.decode(response.bodyBytes));
-        final formattedJson = JsonEncoder.withIndent('  ').convert(jsonResponse);
-        await file.writeAsString(formattedJson);
-        print('Response saved to ${file.path}');
-      } catch (e) {
-        print('Error saving response: $e');
-      }
-
-      // 生成填充数据的HTML文件
-      await _generateHtmlWithData(jsonDecode(utf8.decode(response.bodyBytes)));
-
-      return divinationResultFromJson(response.body);
+      return divinationResultFromJson(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Failed to load divination result');
     }
   }
 
-  /// 将API数据填充到HTML模板中
-  Future<void> _generateHtmlWithData(Map<String, dynamic> apiData) async {
-    try {
-      // 读取HTML模板
-      final String htmlTemplate = await rootBundle.loadString('assets/bazi_platform_files.html');
-
-      // 提取API数据中的关键信息
-      final data = apiData['data'];
-      if (data == null) return;
-
-      // 替换HTML中的数据
-      String updatedHtml = htmlTemplate;
-
-      // 基本信息替换
-      final system = data['system'];
-      if (system != null) {
-        // 替换姓名
-        if (system['name'] != null) {
-          updatedHtml = updatedHtml.replaceAll('张三', system['name']);
-        }
-
-        // 替换性别
-        if (system['sexx'] != null) {
-          updatedHtml = updatedHtml.replaceAll('性别:男', '性别:${system['sexx']}');
-        }
-
-        // 替换生辰信息
-        if (system['Z_QRQ'] != null) {
-          updatedHtml = updatedHtml.replaceAll('阳历:2025年06月29日00时00分', '阳历:${system['Z_QRQ']}');
-        }
-      }
-
-      // 八字信息替换
-      final bz = data['BZ'];
-      if (bz != null) {
-        // 构建八字字符串
-        final baziString = '${bz['ng']}${bz['nz']}  ${bz['yg']}${bz['yz']}  ${bz['rg']}${bz['rz']}  ${bz['sg']}${bz['sz']}';
-
-        // 替换HTML中的八字信息
-        updatedHtml = updatedHtml.replaceAll('乙巳  壬午  己巳  甲子', baziString);
-        updatedHtml = updatedHtml.replaceAll('乙巳,壬午,己巳,甲子', '${bz['ng']}${bz['nz']},${bz['yg']}${bz['yz']},${bz['rg']}${bz['rz']},${bz['sg']}${bz['sz']}');
-
-        // 替换标题中的八字
-        updatedHtml = updatedHtml.replaceAll('乙巳 壬午 己巳 甲子', '${bz['ng']}${bz['nz']} ${bz['yg']}${bz['yz']} ${bz['rg']}${bz['rz']} ${bz['sg']}${bz['sz']}');
-      }
-
-      // 星座信息替换
-      final xingzuo = data['XingZuo'];
-      if (xingzuo != null && xingzuo['角色'] != null) {
-        updatedHtml = updatedHtml.replaceAll('巨蟹座', xingzuo['角色']);
-      }
-
-      // 替换JavaScript数据
-      if (data != null) {
-        // 将完整的数据对象转换为JSON字符串并替换
-        final jsonData = jsonEncode(data);
-        // 查找并替换writeSource函数中的数据
-        final writeSourcePattern = RegExp(r"writeSource\('','([^']+)'\);");
-        updatedHtml = updatedHtml.replaceAllMapped(writeSourcePattern, (match) {
-          return "writeSource('','$jsonData');";
-        });
-      }
-
-      // 保存更新后的HTML文件
-      final directory = await getApplicationDocumentsDirectory();
-      final htmlFile = File('${directory.path}/bazi_result.html');
-      await htmlFile.writeAsString(updatedHtml, encoding: utf8);
-
-      debugPrint('HTML文件已生成: ${htmlFile.path}');
-
-    } catch (e) {
-      debugPrint('生成HTML文件失败: $e');
-    }
-  }
 
   /// 发起1v1咨询
   ///
