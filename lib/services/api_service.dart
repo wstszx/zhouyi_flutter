@@ -8,8 +8,8 @@ import 'package:zhouyi/models/divination_result.dart';
 
 class ApiService {
   static const String _baseUrl = 'http://www.zydx.win/@3.0/api.php';
-  static const String _appId = '1751357082'; // Replace with your APPID
-  static const String _appKey = '3cf993a74283b97ca06b554ffafc8ba7'; // Replace with your APPKEY
+  static const String _appId = '1751357082';
+  static const String _appKey = '3cf993a74283b97ca06b554ffafc8ba7';
 
   /// 获取八字排盘结果
   ///

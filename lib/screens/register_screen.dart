@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -106,20 +107,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('注册新用户',
             style: TextStyle(color: Color(0xFF8B4513))),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF8B4513)),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // 背景图片
+          SvgPicture.asset(
+            'assets/images/background_gradient.svg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          // 注册内容
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24.0, 120.0, 24.0, 24.0), // 顶部留出AppBar空间
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
               const SizedBox(height: 20),
               const Text(
                 '欢迎加入易理问询',
@@ -129,9 +140,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: Color(0xFF8B4513)),
               ),
               const SizedBox(height: 40),
-              _buildTextField('(手机号) 18511111111'),
+              _buildTextField('手机号', hintText: '请输入手机号', prefixIcon: Icons.phone),
               const SizedBox(height: 20),
-              _buildTextField('(密码) 88888888', obscureText: true),
+              _buildTextField('密码', hintText: '请输入密码', prefixIcon: Icons.lock, obscureText: true),
               const SizedBox(height: 20),
               _buildDateField(),
               const SizedBox(height: 20),
@@ -142,29 +153,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _buildPrimaryButton('确定', () {
                 Navigator.pop(context);
               }),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildTextField(String labelText, {bool obscureText = false}) {
+  Widget _buildTextField(String labelText, {bool obscureText = false, String? hintText, IconData? prefixIcon}) {
     return TextField(
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: labelText,
+        hintText: hintText,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: const Color(0xFF8B4513)) : null,
         labelStyle: const TextStyle(color: Color(0xFF8B4513)),
+        hintStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
+        fillColor: const Color(0xFFFDEBEB).withValues(alpha: 0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
-          borderSide: const BorderSide(color: Color(0xFF8B4513)),
+          borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -177,17 +198,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
           controller: _birthDateController,
           decoration: InputDecoration(
             labelText: '出生年月日',
+            hintText: '请选择出生日期',
+            prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF8B4513)),
             labelStyle: const TextStyle(color: Color(0xFF8B4513)),
+            hintStyle: TextStyle(color: Colors.grey[400]),
             filled: true,
-            fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
+            fillColor: const Color(0xFFFDEBEB).withValues(alpha: 0.5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
-              borderSide: const BorderSide(color: Color(0xFF8B4513)),
+              borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ),
@@ -199,17 +228,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       value: _selectedGender,
       decoration: InputDecoration(
         labelText: '性别',
+        hintText: '请选择性别',
+        prefixIcon: const Icon(Icons.person, color: Color(0xFF8B4513)),
         labelStyle: const TextStyle(color: Color(0xFF8B4513)),
+        hintStyle: TextStyle(color: Colors.grey[400]),
         filled: true,
-        fillColor: const Color(0xFFFDEBEB).withOpacity(0.5),
+        fillColor: const Color(0xFFFDEBEB).withValues(alpha: 0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
-          borderSide: const BorderSide(color: Color(0xFF8B4513)),
+          borderSide: const BorderSide(color: Color(0xFF8B4513), width: 2),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       items: <String>['男', '女']
           .map<DropdownMenuItem<String>>((String value) {
@@ -229,8 +266,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildVerificationCodeField() {
     return Row(
       children: [
-        Expanded(child: _buildTextField('验证码')),
-        const SizedBox(width: 10),
+        Expanded(child: _buildTextField('验证码', hintText: '请输入6位验证码', prefixIcon: Icons.sms)),
+        const SizedBox(width: 12),
         ElevatedButton(
           onPressed: () {},
           style: ElevatedButton.styleFrom(
@@ -239,7 +276,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            minimumSize: const Size(100, 50),
           ),
           child:
               const Text('获取验证码', style: TextStyle(fontWeight: FontWeight.bold)),
