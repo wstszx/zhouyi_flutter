@@ -165,4 +165,160 @@ class ApiService {
       debugPrint('生成HTML文件失败: $e');
     }
   }
+
+  /// 发起1v1咨询
+  ///
+  /// 参数:
+  /// - [scholarId]: 学者ID
+  /// - [consultationType]: 咨询类型 ('choice' 或 'essay')
+  /// - [name]: 咨询者姓名
+  /// - [gender]: 性别
+  /// - [birthDateTime]: 生辰时间
+  /// - [question]: 问题内容
+  /// - [options]: 选择题选项 (仅选择题需要)
+  Future<Map<String, dynamic>> createConsultation({
+    required String scholarId,
+    required String consultationType,
+    required String name,
+    required String gender,
+    required String birthDateTime,
+    required String question,
+    List<String>? options,
+  }) async {
+    try {
+      // 构建请求数据
+      final requestData = {
+        'scholar_id': scholarId,
+        'consultation_type': consultationType,
+        'birth_info': {
+          'name': name,
+          'gender': gender,
+          'birth_datetime': birthDateTime,
+        },
+        'questions': [
+          {
+            'question': question,
+            'type': consultationType,
+            if (consultationType == 'choice' && options != null) 'options': options,
+          }
+        ],
+      };
+
+      // TODO: 这里应该调用实际的后端API
+      // 目前返回模拟数据
+      await Future.delayed(const Duration(seconds: 2)); // 模拟网络延迟
+
+      // 模拟成功响应
+      return {
+        'code': 200,
+        'message': '咨询发起成功',
+        'data': {
+          'consultation_id': DateTime.now().millisecondsSinceEpoch,
+          'scholar_id': scholarId,
+          'scholar_name': '学者${scholarId}',
+          'price': 50.0,
+          'status': 'pending',
+          'created_at': DateTime.now().toIso8601String(),
+        }
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('创建咨询失败: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// 获取学者列表
+  Future<List<Map<String, dynamic>>> getScholarList({
+    int page = 1,
+    int limit = 20,
+    String? specialty,
+  }) async {
+    try {
+      // TODO: 这里应该调用实际的后端API
+      // 目前返回模拟数据
+      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
+
+      return [
+        {
+          'id': '1',
+          'name': '187****2568',
+          'specialty': '八字分析',
+          'price': 50.0,
+          'rating': 4.8,
+          'consultation_count': 1000,
+        },
+        {
+          'id': '2',
+          'name': '138****9999',
+          'specialty': '风水命理',
+          'price': 80.0,
+          'rating': 4.9,
+          'consultation_count': 800,
+        },
+        {
+          'id': '3',
+          'name': '159****1234',
+          'specialty': '周易占卜',
+          'price': 60.0,
+          'rating': 4.7,
+          'consultation_count': 1200,
+        },
+      ];
+    } catch (e) {
+      if (kDebugMode) {
+        print('获取学者列表失败: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// 获取咨询历史
+  Future<Map<String, dynamic>> getConsultationHistory({
+    int page = 1,
+    int limit = 20,
+    String? status,
+  }) async {
+    try {
+      // TODO: 这里应该调用实际的后端API
+      // 目前返回模拟数据
+      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
+
+      return {
+        'code': 200,
+        'message': '获取成功',
+        'data': {
+          'consultations': [
+            {
+              'consultation_id': 123,
+              'scholar_name': '187****2568',
+              'consultation_type': 'choice',
+              'price': 50.0,
+              'status': 'completed',
+              'created_at': '2025-01-01 10:00:00',
+              'completed_at': '2025-01-01 11:00:00',
+            },
+            {
+              'consultation_id': 124,
+              'scholar_name': '138****9999',
+              'consultation_type': 'essay',
+              'price': 80.0,
+              'status': 'pending',
+              'created_at': '2025-01-02 14:00:00',
+              'completed_at': null,
+            },
+          ],
+          'total': 2,
+          'page': page,
+          'limit': limit,
+        }
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('获取咨询历史失败: $e');
+      }
+      rethrow;
+    }
+  }
 }

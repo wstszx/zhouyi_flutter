@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_consultation_screen.dart';
 
 class OneOnOneScreen extends StatelessWidget {
   const OneOnOneScreen({super.key});
@@ -57,7 +58,16 @@ class OneOnOneScreen extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // Show scholar details dialog
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateConsultationScreen(
+                          scholarId: '1', // 这里应该是实际的学者ID
+                          scholarName: name,
+                          price: price,
+                        ),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B4513),

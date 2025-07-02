@@ -13,13 +13,21 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordLogin = true;
-  bool agree = false;
+  bool agree = true; // 默认勾选服务条款
   bool _obscurePassword = true;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _verificationCodeController = TextEditingController();
   int _countdown = 0;
   bool _isCountingDown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 设置默认值方便测试
+    _phoneController.text = '13800138000';
+    _passwordController.text = '123456';
+  }
 
   @override
   void dispose() {
