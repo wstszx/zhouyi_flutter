@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:zhouyi/screens/native_paipan_result_screen.dart';
+import 'package:zhouyi/screens/paipan_result_screen.dart';
 import 'package:zhouyi/services/api_service.dart';
 
 class ChartingScreen extends StatefulWidget {
@@ -132,11 +132,11 @@ class _ChartingScreenState extends State<ChartingScreen> {
                   // 关闭加载对话框
                   if (mounted) Navigator.pop(context);
 
-                  // 跳转到结果页面
+                  // 跳转到结果页面 - 使用新的改进版本
                   if (mounted) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => NativePaipanResultScreen(result: result)),
+                      MaterialPageRoute(builder: (context) => PaipanResultScreen(result: result)),
                     );
                   }
 
