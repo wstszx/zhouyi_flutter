@@ -2,160 +2,26 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zhouyi/models/divination_result.dart' as old_model;
-
-// JSON数据模型，用于解析和存储命理信息
-// Model for parsing and storing the divination data from JSON
-class DivinationData {
-  final String name;
-  final String sex;
-  final String nylm;
-  final String shengxiao;
-  final String xingzuo;
-  final List<String> geju;
-  final String wuxingWangdu;
-  final String gongli;
-  final String nongli;
-  final Map<String, String> bazi;
-  final Map<String, String> nayin;
-  final Map<String, List<String>> shensha;
-  final Map<String, dynamic> fx;
-  final List<dynamic> detailInfo;
-  final String xingxiuGeyao;
-
-  DivinationData({
-    required this.name,
-    required this.sex,
-    required this.nylm,
-    required this.shengxiao,
-    required this.xingzuo,
-    required this.geju,
-    required this.wuxingWangdu,
-    required this.gongli,
-    required this.nongli,
-    required this.bazi,
-    required this.nayin,
-    required this.shensha,
-    required this.fx,
-    required this.detailInfo,
-    required this.xingxiuGeyao,
-  });
-
-  factory DivinationData.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
-    return DivinationData(
-      name: data['name'],
-      sex: data['sex'],
-      nylm: data['nylm'],
-      shengxiao: data['shengxiao'],
-      xingzuo: data['xingzuo'],
-      geju: List<String>.from(data['geju']),
-      wuxingWangdu: data['wuxing_wangdu'],
-      gongli: data['gongli'],
-      nongli: data['nongli'],
-      bazi: Map<String, String>.from(data['bazi']),
-      nayin: Map<String, String>.from(data['nayin']),
-      shensha: (data['shensha'] as Map<String, dynamic>).map(
-        (key, value) => MapEntry(key, List<String>.from(value)),
-      ),
-      fx: Map<String, dynamic>.from(data['FX']),
-      detailInfo: List<dynamic>.from(data['detail_info']),
-      xingxiuGeyao: data['xingxiu_geyao'],
-    );
-  }
-
-  factory DivinationData.fromOldModel(old_model.Data oldData) {
-    final baziMap = {
-      'ng': oldData.bazi.ng,
-      'nz': oldData.bazi.nz,
-      'yg': oldData.bazi.yg,
-      'yz': oldData.bazi.yz,
-      'rg': oldData.bazi.rg,
-      'rz': oldData.bazi.rz,
-      'sg': oldData.bazi.sg,
-      'sz': oldData.bazi.sz,
-    };
-
-    final nayinMap = {
-      'nz': oldData.nayin.nz,
-      'yz': oldData.nayin.yz,
-      'rz': oldData.nayin.rz,
-      'sz': oldData.nayin.sz,
-    };
-
-    final shenshaMap = {
-      'nz': oldData.shensha.nz,
-      'yz': oldData.shensha.yz,
-      'rz': oldData.shensha.rz,
-      'sz': oldData.shensha.sz,
-    };
-
-    final fxMap = {
-      'ditiansui': oldData.fx.ditiansui,
-      'sanmingtonghui': oldData.fx.sanmingtonghui,
-    };
-
-    final detailInfoList = oldData.detailInfo.map((info) {
-      final liunianInfoList = info.liunianInfo.map((liunian) {
-        return {
-          'liunian_year': liunian.liunianYear,
-          'liunian_ganzhi': liunian.liunianGanzhi,
-          'liunian_age': liunian.liunianAge,
-          'liunian_yunshi': liunian.liunianYunshi,
-        };
-      }).toList();
-
-      return {
-        'dayun_start_age': info.dayunStartAge,
-        'dayun_end_age': info.dayunEndAge,
-        'dayun_start_ganzhi': info.dayunStartGanzhi,
-        'dayun_nayin': info.dayunNayin,
-        'dayun_start_year': info.dayunStartYear,
-        'dayun_end_year': info.dayunEndYear,
-        'liunian_info': liunianInfoList,
-      };
-    }).toList();
-
-    return DivinationData(
-      name: oldData.name,
-      sex: oldData.sex,
-      nylm: oldData.nylm,
-      shengxiao: oldData.shengxiao,
-      xingzuo: oldData.xingzuo,
-      geju: oldData.geju,
-      wuxingWangdu: oldData.wuxingWangdu,
-      gongli: oldData.gongli,
-      nongli: oldData.nongli,
-      bazi: baziMap,
-      nayin: nayinMap,
-      shensha: shenshaMap,
-      fx: fxMap,
-      detailInfo: detailInfoList,
-      xingxiuGeyao: oldData.xingxiuGeyao,
-    );
-  }
-}
+import 'package:zhouyi/models/divination_result.dart';
 
 // 主屏幕包装器，用于数据转换
 class PaipanResultScreen extends StatelessWidget {
-  final old_model.DivinationResult result;
+  final DivinationResult result;
 
   const PaipanResultScreen({super.key, required this.result});
 
   @override
   Widget build(BuildContext context) {
-    // 将旧模型转换为新模型
-    final divinationData = DivinationData.fromOldModel(result.data);
-    return _PaiPanResultView(data: divinationData);
+    return _PaiPanResultView(result: result);
   }
 }
 
 
 // 主屏幕UI
 class _PaiPanResultView extends StatefulWidget {
-  final DivinationData data;
+  final DivinationResult result;
 
-  const _PaiPanResultView({required this.data});
+  const _PaiPanResultView({required this.result});
 
   @override
   State<_PaiPanResultView> createState() => _PaiPanResultViewState();
@@ -197,7 +63,7 @@ class _PaiPanResultViewState extends State<_PaiPanResultView> with SingleTickerP
                 pinned: false,
                 backgroundColor: Colors.transparent,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: HeaderInfo(data: widget.data),
+                  background: HeaderInfo(data: widget.result.data),
                 ),
               ),
               SliverPersistentHeader(
@@ -222,9 +88,9 @@ class _PaiPanResultViewState extends State<_PaiPanResultView> with SingleTickerP
           body: TabBarView(
             controller: _tabController,
             children: [
-              FortuneAnalysisTab(data: widget.data),
-              ShenshaAnalysisTab(data: widget.data),
-              ChartStructureTab(data: widget.data),
+              FortuneAnalysisTab(data: widget.result.data),
+              ShenshaAnalysisTab(data: widget.result.data),
+              ChartStructureTab(data: widget.result.data),
             ],
           ),
         ),
@@ -254,7 +120,7 @@ class FrostedCard extends StatelessWidget {
 
 // 头部信息组件
 class HeaderInfo extends StatelessWidget {
-  final DivinationData data;
+  final Data data;
   const HeaderInfo({super.key, required this.data});
 
   @override
@@ -292,14 +158,17 @@ class HeaderInfo extends StatelessWidget {
 
 // 核心命盘卡片
 class BaziCard extends StatelessWidget {
-  final DivinationData data;
+  final Data data;
   const BaziCard({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
     final baziOrder = ['年柱', '月柱', '日柱', '时柱'];
-    final baziKeys = [['ng', 'nz'], ['yg', 'yz'], ['rg', 'rz'], ['sg', 'sz']];
-    final nayinKeys = ['nz', 'yz', 'rz', 'sz'];
+    final baziMap = data.bazi;
+    final nayinMap = data.nayin;
+    final baziGan = [baziMap.ng, baziMap.yg, baziMap.rg, baziMap.sg];
+    final baziZhi = [baziMap.nz, baziMap.yz, baziMap.rz, baziMap.sz];
+    final nayinList = [nayinMap.nz, nayinMap.yz, nayinMap.rz, nayinMap.sz];
 
     return FrostedCard(
       child: Padding(
@@ -325,10 +194,10 @@ class BaziCard extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          Text(data.bazi[baziKeys[i][0]]!, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF8B4513))),
-                          Text(data.bazi[baziKeys[i][1]]!, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                          Text(baziGan[i], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF8B4513))),
+                          Text(baziZhi[i], style: const TextStyle(fontSize: 16, color: Colors.black87)),
                           const SizedBox(height: 4),
-                          Text(data.nayin[nayinKeys[i]]!, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                          Text(nayinList[i], style: const TextStyle(fontSize: 12, color: Colors.black54)),
                         ],
                       ),
                     ),
@@ -363,14 +232,14 @@ class BaziCard extends StatelessWidget {
 
 // 运势分析标签页
 class FortuneAnalysisTab extends StatelessWidget {
-  final DivinationData data;
+  final Data data;
   const FortuneAnalysisTab({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final liunianData = data.detailInfo.isNotEmpty && data.detailInfo[0]['liunian_info'] != null
-      ? (data.detailInfo[0]['liunian_info'] as List).take(4).toList()
-      : [];
+    final liunianData = data.detailInfo.isNotEmpty && data.detailInfo[0].liunianInfo.isNotEmpty
+        ? data.detailInfo[0].liunianInfo.take(4).toList()
+        : [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -386,7 +255,7 @@ class FortuneAnalysisTab extends StatelessWidget {
                 children: [
                   const SectionTitle(title: '大运', color: Color(0xFF8B4513)),
                   const SizedBox(height: 12),
-                  ...data.detailInfo.take(4).map((item) => Padding(
+                  ...data.detailInfo.take(4).map((info) => Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Container(
                           padding: const EdgeInsets.only(left: 12),
@@ -397,11 +266,11 @@ class FortuneAnalysisTab extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${item['dayun_start_age']}-${item['dayun_end_age']}岁 (${item['dayun_start_ganzhi']} ${item['dayun_nayin'] ?? ''})',
+                                '${info.dayunStartAge}-${info.dayunEndAge}岁 (${info.dayunStartGanzhi} ${info.dayunNayin})',
                                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 16),
                               ),
                               Text(
-                                '${item['dayun_start_year']} - ${item['dayun_end_year']}',
+                                '${info.dayunStartYear} - ${info.dayunEndYear}',
                                 style: const TextStyle(color: Colors.black54, fontSize: 14),
                               ),
                             ],
@@ -421,7 +290,7 @@ class FortuneAnalysisTab extends StatelessWidget {
                 children: [
                   const SectionTitle(title: '流年运程 (2023-2026)', color: Color(0xFF8B4513)),
                   const SizedBox(height: 12),
-                  ...liunianData.map((item) => Padding(
+                  ...liunianData.map((liunian) => Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Container(
                           padding: const EdgeInsets.only(left: 12),
@@ -432,12 +301,12 @@ class FortuneAnalysisTab extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${item['liunian_year']}年 (${item['liunian_ganzhi']}) - ${item['liunian_age']}岁',
+                                '${liunian.liunianYear}年 (${liunian.liunianGanzhi}) - ${liunian.liunianAge}岁',
                                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 16),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                item['liunian_yunshi'],
+                                liunian.liunianYunshi,
                                 style: const TextStyle(color: Colors.black54, fontSize: 14),
                               ),
                             ],
@@ -456,12 +325,12 @@ class FortuneAnalysisTab extends StatelessWidget {
 
 // 神煞解析标签页
 class ShenshaAnalysisTab extends StatelessWidget {
-  final DivinationData data;
+  final Data data;
   const ShenshaAnalysisTab({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final shenshaPillars = {'年柱': data.shensha['nz'], '月柱': data.shensha['yz'], '日柱': data.shensha['rz'], '时柱': data.shensha['sz']};
+    final shenshaPillars = {'年柱': data.shensha.nz, '月柱': data.shensha.yz, '日柱': data.shensha.rz, '时柱': data.shensha.sz};
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -484,7 +353,7 @@ class ShenshaAnalysisTab extends StatelessWidget {
                       Wrap(
                         spacing: 8.0,
                         runSpacing: 8.0,
-                        children: (entry.value ?? []).map((sha) => Chip(
+                        children: entry.value.map((sha) => Chip(
                           label: Text(sha),
                           backgroundColor: const Color(0xFF8B4513).withOpacity(0.1),
                           labelStyle: const TextStyle(color: Color(0xFF8B4513)),
@@ -504,7 +373,7 @@ class ShenshaAnalysisTab extends StatelessWidget {
 
 // 命盘结构标签页
 class ChartStructureTab extends StatelessWidget {
-  final DivinationData data;
+  final Data data;
   const ChartStructureTab({super.key, required this.data});
 
   @override
@@ -521,12 +390,12 @@ class ChartStructureTab extends StatelessWidget {
               const SizedBox(height: 16),
               CustomExpansionTile(
                 title: '滴天髓',
-                content: data.fx['ditiansui'],
+                content: data.fx.ditiansui,
               ),
               const SizedBox(height: 8),
               CustomExpansionTile(
                 title: '三命通会',
-                content: (data.fx['sanmingtonghui'] as List).join('\n\n'),
+                content: data.fx.sanmingtonghui.join('\n\n'),
               ),
               const SizedBox(height: 8),
               CustomExpansionTile(
