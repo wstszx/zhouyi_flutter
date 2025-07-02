@@ -7,9 +7,473 @@ import 'package:path_provider/path_provider.dart';
 import 'package:zhouyi/models/divination_result.dart';
 
 class ApiService {
-  static const String _baseUrl = 'http://www.zydx.win/@3.0/api.php';
-  static const String _appId = '1751357082';
-  static const String _appKey = '3cf993a74283b97ca06b554ffafc8ba7';
+  // 现有占卜服务的配置
+  static const String _divinationBaseUrl = 'http://www.zydx.win/@3.0/api.php';
+  static const String _divinationAppId = '1751357082';
+  static const String _divinationAppKey = '3cf993a74283b97ca06b554ffafc8ba7';
+
+  // 新后端服务的配置
+  static const String _backendBaseUrl = 'http://your.api.backend/api'; // TODO: 替换为真实的后端地址
+  String? _token;
+
+  /// 设置认证令牌
+  void setAuthToken(String? token) {
+    _token = token;
+  }
+
+  /// 构造带认证的请求头
+  Map<String, String> _getHeaders() {
+    final headers = {'Content-Type': 'application/json'};
+    if (_token != null) {
+      headers['Authorization'] = 'Bearer $_token';
+    }
+    return headers;
+  }
+
+  /// 发送POST请求的辅助方法
+  Future<Map<String, dynamic>> _post(String endpoint, Map<String, dynamic> data) async {
+    final response = await http.post(
+      Uri.parse('$_backendBaseUrl$endpoint'),
+      headers: _getHeaders(),
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(utf8.decode(response.bodyBytes));
+    } else {
+      // TODO: 更精细的错误处理
+      throw Exception('Failed to post data to $endpoint. Status code: ${response.statusCode}');
+    }
+  }
+
+  /// 发送GET请求的辅助方法
+  Future<Map<String, dynamic>> _get(String endpoint, [Map<String, String>? queryParams]) async {
+    final uri = Uri.parse('$_backendBaseUrl$endpoint').replace(queryParameters: queryParams);
+    final response = await http.get(uri, headers: _getHeaders());
+
+    if (response.statusCode == 200) {
+      return jsonDecode(utf8.decode(response.bodyBytes));
+    } else {
+      // TODO: 更精细的错误处理
+      throw Exception('Failed to get data from $endpoint. Status code: ${response.statusCode}');
+    }
+  }
+
+  // --- 用户认证模块 ---
+
+  /// 1.1 用户注册
+  Future<Map<String, dynamic>> register({
+    required String phone,
+    required String password,
+    required String birthDate,
+    required String gender,
+    required String verificationCode,
+  }) async {
+    return _post('/auth/register', {
+      'phone': phone,
+      'password': password,
+      'birth_date': birthDate,
+      'gender': gender,
+      'verification_code': verificationCode,
+    });
+  }
+
+  /// 1.2 用户登录
+  Future<Map<String, dynamic>> login({
+    required String phone,
+    required String loginType,
+    String? password,
+    String? verificationCode,
+  }) async {
+    final data = {
+      'phone': phone,
+      'login_type': loginType,
+    };
+    if (password != null) {
+      data['password'] = password;
+    }
+    if (verificationCode != null) {
+      data['verification_code'] = verificationCode;
+    }
+    return _post('/auth/login', data);
+  }
+
+  /// 1.3 忘记密码
+  Future<Map<String, dynamic>> resetPassword({
+    required String phone,
+    required String newPassword,
+    required String confirmPassword,
+    required String verificationCode,
+  }) async {
+    return _post('/auth/reset-password', {
+      'phone': phone,
+      'new_password': newPassword,
+      'confirm_password': confirmPassword,
+      'verification_code': verificationCode,
+    });
+  }
+
+  /// 1.4 发送验证码
+  Future<Map<String, dynamic>> sendSms({
+    required String phone,
+    required String type,
+  }) async {
+    return _post('/auth/send-sms', {
+      'phone': phone,
+      'type': type,
+    });
+  }
+
+
+  /// 发送PUT请求的辅助方法
+  Future<Map<String, dynamic>> _put(String endpoint, Map<String, dynamic> data) async {
+    final response = await http.put(
+      Uri.parse('$_backendBaseUrl$endpoint'),
+      headers: _getHeaders(),
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(utf8.decode(response.bodyBytes));
+    } else {
+      // TODO: 更精细的错误处理
+      throw Exception('Failed to put data to $endpoint. Status code: ${response.statusCode}');
+    }
+  }
+
+  // --- 用户信息管理模块 ---
+
+  /// 2.1 获取用户信息
+  Future<Map<String, dynamic>> getUserProfile() async {
+    return _get('/user/profile');
+  }
+
+  /// 2.2 更新用户信息
+  Future<Map<String, dynamic>> updateUserProfile({
+    String? nickname,
+    String? avatar,
+  }) async {
+    final data = <String, dynamic>{};
+    if (nickname != null) data['nickname'] = nickname;
+    if (avatar != null) data['avatar'] = avatar;
+    return _put('/user/profile', data);
+  }
+
+  /// 2.3 绑定支付宝/实名认证
+  Future<Map<String, dynamic>> bindAlipay({
+    required String realName,
+    required String idCard,
+    required String alipayAccount,
+  }) async {
+    return _post('/user/bind-alipay', {
+      'real_name': realName,
+      'id_card': idCard,
+      'alipay_account': alipayAccount,
+    });
+  }
+
+  /// 发送DELETE请求的辅助方法
+  Future<Map<String, dynamic>> _delete(String endpoint) async {
+    final response = await http.delete(
+      Uri.parse('$_backendBaseUrl$endpoint'),
+      headers: _getHeaders(),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // DELETE请求可能返回空响应体，或者不返回JSON
+      final responseBody = utf8.decode(response.bodyBytes);
+      if (responseBody.isNotEmpty) {
+        return jsonDecode(responseBody);
+      }
+      return {'code': response.statusCode, 'message': 'Success'};
+    } else {
+      // TODO: 更精细的错误处理
+      throw Exception('Failed to delete resource at $endpoint. Status code: ${response.statusCode}');
+    }
+  }
+
+  // --- 占卜服务模块 ---
+
+  /// 3.1 八字排盘 (新后端)
+  Future<Map<String, dynamic>> baziCalculate({
+    required String name,
+    required int gender, // 1-男, 0-女
+    required String birthDatetime,
+    required String birthLocation,
+  }) async {
+    return _post('/divination/bazi', {
+      'name': name,
+      'gender': gender,
+      'birth_datetime': birthDatetime,
+      'birth_location': birthLocation,
+    });
+  }
+
+  /// 3.2 保存排盘记录
+  Future<Map<String, dynamic>> saveDivinationRecord({
+    required String name,
+    required String gender,
+    required String birthDatetime,
+    required Map<String, dynamic> resultData,
+  }) async {
+    return _post('/divination/save-record', {
+      'name': name,
+      'gender': gender,
+      'birth_datetime': birthDatetime,
+      'result_data': resultData,
+    });
+  }
+
+  /// 3.3 获取排盘历史
+  Future<Map<String, dynamic>> getDivinationHistory({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return _get('/divination/history', {
+      'page': page.toString(),
+      'limit': limit.toString(),
+    });
+  }
+
+  /// 3.4 删除排盘记录
+  Future<Map<String, dynamic>> deleteDivinationRecord(int recordId) async {
+    return _delete('/divination/record/$recordId');
+  }
+
+  // --- 问答系统模块 ---
+
+  /// 4.1 发起新问询
+  Future<Map<String, dynamic>> createQuestion({
+    required String title,
+    required String questionType,
+    required Map<String, dynamic> birthInfo,
+    required List<Map<String, dynamic>> questions,
+    required double rewardAmount,
+  }) async {
+    return _post('/qa/create-question', {
+      'title': title,
+      'question_type': questionType,
+      'birth_info': birthInfo,
+      'questions': questions,
+      'reward_amount': rewardAmount,
+    });
+  }
+
+  /// 4.2 获取我的问询
+  Future<Map<String, dynamic>> getMyQuestions({
+    int page = 1,
+    int limit = 20,
+    String? status,
+  }) async {
+    final params = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    if (status != null) {
+      params['status'] = status;
+    }
+    return _get('/qa/my-questions', params);
+  }
+
+  /// 4.3 获取问询详情
+  Future<Map<String, dynamic>> getQuestionDetails(int questionId) async {
+    return _get('/qa/question/$questionId');
+  }
+
+  /// 4.4 回答问询
+  Future<Map<String, dynamic>> answerQuestion({
+    required int questionId,
+    required List<Map<String, dynamic>> answers,
+  }) async {
+    return _post('/qa/answer', {
+      'question_id': questionId,
+      'answers': answers,
+    });
+  }
+
+  /// 4.5 采纳答案
+  Future<Map<String, dynamic>> adoptAnswer({
+    required int questionId,
+    required int answerId,
+  }) async {
+    return _post('/qa/adopt-answer', {
+      'question_id': questionId,
+      'answer_id': answerId,
+    });
+  }
+
+  // --- 一对一咨询模块 ---
+
+  /// 5.1 获取学者列表 (新后端)
+  Future<Map<String, dynamic>> getScholars({
+    int page = 1,
+    int limit = 20,
+    String? specialty,
+  }) async {
+    final params = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    if (specialty != null) {
+      params['specialty'] = specialty;
+    }
+    return _get('/consultation/scholars', params);
+  }
+
+  /// 5.2 发起一对一咨询 (新后端)
+  Future<Map<String, dynamic>> createNewConsultation({
+    required int scholarId,
+    required String consultationType,
+    required Map<String, dynamic> birthInfo,
+    required List<Map<String, dynamic>> questions,
+  }) async {
+    return _post('/consultation/create', {
+      'scholar_id': scholarId,
+      'consultation_type': consultationType,
+      'birth_info': birthInfo,
+      'questions': questions,
+    });
+  }
+
+  /// 5.3 获取咨询历史 (新后端)
+  Future<Map<String, dynamic>> getNewConsultationHistory({
+    int page = 1,
+    int limit = 20,
+    String? status,
+  }) async {
+    final params = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    if (status != null) {
+      params['status'] = status;
+    }
+    return _get('/consultation/history', params);
+  }
+
+  // --- VIP会员模块 ---
+
+  /// 6.1 获取VIP信息
+  Future<Map<String, dynamic>> getVipInfo() async {
+    return _get('/vip/info');
+  }
+
+  /// 6.2 购买VIP
+  Future<Map<String, dynamic>> purchaseVip({
+    required String packageType,
+    required String paymentMethod,
+  }) async {
+    return _post('/vip/purchase', {
+      'package_type': packageType,
+      'payment_method': paymentMethod,
+    });
+  }
+
+  // --- 支付模块 ---
+
+  /// 7.1 创建支付订单
+  Future<Map<String, dynamic>> createPaymentOrder({
+    required String orderType,
+    required double amount,
+    required String paymentMethod,
+    required int relatedId,
+  }) async {
+    return _post('/payment/create-order', {
+      'order_type': orderType,
+      'amount': amount,
+      'payment_method': paymentMethod,
+      'related_id': relatedId,
+    });
+  }
+
+  // 7.2 支付回调: 通常由后端处理，前端无需调用
+
+  /// 7.3 获取消费记录
+  Future<Map<String, dynamic>> getConsumptionHistory({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return _get('/payment/consumption-history', {
+      'page': page.toString(),
+      'limit': limit.toString(),
+    });
+  }
+
+  // --- 消息系统模块 ---
+
+  /// 8.1 获取消息列表
+  Future<Map<String, dynamic>> getMessages({
+    int page = 1,
+    int limit = 20,
+    String? type,
+  }) async {
+    final params = {
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    if (type != null) {
+      params['type'] = type;
+    }
+    return _get('/message/list', params);
+  }
+
+  /// 8.2 标记消息已读
+  Future<Map<String, dynamic>> readMessage(int messageId) async {
+    return _put('/message/$messageId/read', {});
+  }
+
+  /// 8.3 发送系统消息 (管理员功能)
+  Future<Map<String, dynamic>> sendSystemMessage({
+    List<int>? userIds,
+    required String title,
+    required String content,
+    required String type,
+  }) async {
+    return _post('/message/send', {
+      'user_ids': userIds,
+      'title': title,
+      'content': content,
+      'type': type,
+    });
+  }
+
+  // --- 反馈建议模块 ---
+
+  /// 9.1 提交反馈
+  Future<Map<String, dynamic>> submitFeedback({
+    required String type,
+    required String content,
+    String? contactInfo,
+    List<String>? images,
+  }) async {
+    return _post('/feedback/submit', {
+      'type': type,
+      'content': content,
+      'contact_info': contactInfo,
+      'images': images,
+    });
+  }
+
+  /// 9.2 提交个人意见
+  Future<Map<String, dynamic>> submitOpinion({
+    required String opinion,
+  }) async {
+    return _post('/user/opinion', {
+      'opinion': opinion,
+    });
+  }
+
+  // --- 系统管理模块 ---
+
+  /// 10.1 获取版本信息
+  Future<Map<String, dynamic>> getVersionInfo() async {
+    return _get('/system/version');
+  }
+
+  /// 10.2 检查更新
+  Future<Map<String, dynamic>> checkUpdate() async {
+    return _get('/system/check-update');
+  }
 
   /// 获取八字排盘结果
   ///
@@ -43,8 +507,8 @@ class ApiService {
     int? siling,
   }) async {
     final queryParameters = {
-      'APPID': _appId,
-      'APPKEY': _appKey,
+      'APPID': _divinationAppId,
+      'APPKEY': _divinationAppKey,
       'api': '101',
       'name': name,
       'sex': sex.toString(),
@@ -63,7 +527,7 @@ class ApiService {
     if (ztys != null) queryParameters['ztys'] = ztys.toString();
     if (siling != null) queryParameters['Siling'] = siling.toString();
 
-    final uri = Uri.parse(_baseUrl).replace(queryParameters: queryParameters);
+    final uri = Uri.parse(_divinationBaseUrl).replace(queryParameters: queryParameters);
 
     final response = await http.get(uri);
 
