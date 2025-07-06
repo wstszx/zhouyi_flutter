@@ -1,0 +1,1 @@
+请于https://zydx.win登录获取APPID及APPKEY后，在show.php文件中第2、3行进行配置，运行环境PHP5.4-9.0

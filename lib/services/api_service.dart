@@ -694,4 +694,50 @@ class ApiService {
       rethrow;
     }
   }
+
+  /// 获取八字排盘原始JSON数据 (用于WebView)
+  Future<String> getPaipanRawData({
+    required String name,
+    required int sex,
+    required String inputDate,
+    String? city1,
+    String? city2,
+    String? city3,
+    int? sect,
+    int? sylx,
+    int? maxts,
+    String? leixinggg,
+    int? ztys,
+    int? siling,
+  }) async {
+    final queryParameters = {
+      'APPID': _divinationAppId,
+      'APPKEY': _divinationAppKey,
+      'api': '1', // 使用和 show.php 一致的 api=1
+      'name': name,
+      'sex': sex.toString(),
+      'DateType': '5',
+      'inputdate': inputDate,
+    };
+
+    // 添加可选参数
+    if (city1 != null) queryParameters['city1'] = city1;
+    if (city2 != null) queryParameters['city2'] = city2;
+    if (city3 != null) queryParameters['city3'] = city3;
+    if (sect != null) queryParameters['Sect'] = sect.toString();
+    if (sylx != null) queryParameters['SYLX'] = sylx.toString();
+    if (maxts != null) queryParameters['maxts'] = maxts.toString();
+    if (leixinggg != null) queryParameters['leixinggg'] = leixinggg;
+    if (ztys != null) queryParameters['ztys'] = ztys.toString();
+    if (siling != null) queryParameters['Siling'] = siling.toString();
+
+    final uri = Uri.parse(_divinationBaseUrl).replace(queryParameters: queryParameters);
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      return utf8.decode(response.bodyBytes);
+    } else {
+      throw Exception('Failed to load paipan raw data. Status code: ${response.statusCode}');
+    }
+  }
 }

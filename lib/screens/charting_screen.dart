@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:zhouyi/screens/paipan_result_screen.dart';
@@ -168,29 +169,44 @@ class _ChartingScreenState extends State<ChartingScreen> {
                     final dateFormat = _isGregorian ? '公历' : '农历';
                     final formattedDate = '$dateFormat${DateFormat('yyyy年MM月dd日 HH时mm分').format(_selectedDate!)}';
 
-                    // 调用API，包含地理位置参数
-                    final result = await apiService.getDivinationResult(
+                    // 1. 调用API获取原始JSON数据
+                    final rawJsonData = await apiService.getPaipanRawData(
                       name: _nameController.text,
                       sex: _selectedGender == '男' ? 0 : 1,
                       inputDate: formattedDate,
-                      // 地理位置参数
                       city1: _selectedProvince,
                       city2: _selectedCity,
                       city3: _selectedDistrict,
-                      // 其他参数使用默认值
-                      sect: 2, // 晚子时按当天
-                      maxts: 5, // 大运5轮
-                      siling: 0, // 四柱信息标识
+                      sect: 2,
+                      maxts: 5,
+                      siling: 0,
+                    );
+
+                    // 2. 加载本地 show.php 模板
+                    final phpTemplate = await rootBundle.loadString('assets/paipan/show.php');
+
+                    // 3. 将JSON数据注入到模板中
+                    final escapedJson = rawJsonData
+                        .replaceAll('\\', '\\\\')
+                        .replaceAll("'", "\\'")
+                        .replaceAll('\n', '\\n')
+                        .replaceAll('\r', '');
+                    
+                    final replacementTarget = r'<?php echo file_get_contents($URL.http_build_query($_GET)."&api=1&APPID=".$APPID."&APPKEY=".$APPKEY);?>';
+                    
+                    final finalHtml = phpTemplate.replaceFirst(
+                      replacementTarget,
+                      "'$escapedJson'"
                     );
 
                     // 关闭加载对话框
                     if (mounted) Navigator.pop(context);
 
-                    // 跳转到结果页面 - 使用新的改进版本
+                    // 4. 跳转到WebView结果页面
                     if (mounted) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => PaipanResultScreen(result: result)),
+                        MaterialPageRoute(builder: (context) => PaipanResultScreen(htmlContent: finalHtml)),
                       );
                     }
 
