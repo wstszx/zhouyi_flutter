@@ -1,19 +1,41 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:zhouyi/models/divination_result.dart';
+import 'package:zhouyi/models/api_response.dart';
+import 'package:zhouyi/models/user_model.dart';
+import 'package:zhouyi/models/paginated_response.dart';
+import 'package:zhouyi/models/app_models.dart';
+
+/// 自定义API异常类
+class ApiError implements Exception {
+  final String message;
+  final int? code;
+  final dynamic errorData;
+
+  ApiError(this.message, {this.code, this.errorData});
+
+  @override
+  String toString() {
+    return 'ApiError: $message (code: $code)';
+  }
+}
+
+/// 环境配置
+class Environment {
+  static const String _devBaseUrl = 'http://192.168.1.14:5000/api/app';
+  static const String _prodBaseUrl = 'https://api.yourdomain.com/api/app'; // 替换为您的生产环境域名
+
+  static String get baseUrl {
+    if (kReleaseMode) {
+      return _prodBaseUrl;
+    } else {
+      return _devBaseUrl;
+    }
+  }
+}
 
 class ApiService {
-  // 现有占卜服务的配置
-  static const String _divinationBaseUrl = 'http://www.zydx.win/@3.0/api.php';
-  static const String _divinationAppId = '1751357082';
-  static const String _divinationAppKey = '3cf993a74283b97ca06b554ffafc8ba7';
-
-  // 新后端服务的配置
-  static const String _backendBaseUrl = 'http://your.api.backend/api'; // TODO: 替换为真实的后端地址
   String? _token;
 
   /// 设置认证令牌
@@ -23,721 +45,347 @@ class ApiService {
 
   /// 构造带认证的请求头
   Map<String, String> _getHeaders() {
-    final headers = {'Content-Type': 'application/json'};
+    final headers = {
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Accept': 'application/json',
+    };
     if (_token != null) {
       headers['Authorization'] = 'Bearer $_token';
     }
     return headers;
   }
 
-  /// 发送POST请求的辅助方法
-  Future<Map<String, dynamic>> _post(String endpoint, Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse('$_backendBaseUrl$endpoint'),
-      headers: _getHeaders(),
-      body: jsonEncode(data),
-    );
-
+  /// 处理HTTP响应
+  ApiResponse<T> _handleResponse<T>(http.Response response, T Function(dynamic) fromJson) {
+    final decodedBody = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(utf8.decode(response.bodyBytes));
+      final apiResponse = ApiResponse.fromJson(decodedBody, fromJson);
+      if (apiResponse.success) {
+        return apiResponse;
+      } else {
+        throw ApiError(apiResponse.message ?? 'Unknown error', code: apiResponse.code);
+      }
     } else {
-      // TODO: 更精细的错误处理
-      throw Exception('Failed to post data to $endpoint. Status code: ${response.statusCode}');
+      throw ApiError(
+        decodedBody['message'] ?? 'Unknown server error',
+        code: response.statusCode,
+        errorData: decodedBody,
+      );
+    }
+  }
+
+  /// 发送POST请求的辅助方法
+  Future<ApiResponse<T>> _post<T>(String endpoint, T Function(dynamic) fromJson, {Map<String, dynamic>? data}) async {
+    final uri = Uri.parse('${Environment.baseUrl}$endpoint');
+    final headers = _getHeaders();
+    final body = data != null ? jsonEncode(data) : null;
+
+    if (kDebugMode) {
+      print('--- ApiService Request ---');
+      print('POST $uri');
+      print('Headers: $headers');
+      print('Body: $body');
+      print('------------------------');
+    }
+
+    try {
+      final response = await http.post(uri, headers: headers, body: body);
+      if (kDebugMode) {
+        print('--- ApiService Response ---');
+        print('URL: ${response.request?.url}');
+        print('Status Code: ${response.statusCode}');
+        print('Body: ${utf8.decode(response.bodyBytes)}');
+        print('-------------------------');
+      }
+      return _handleResponse(response, fromJson);
+    } on SocketException {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Network error for POST $uri: SocketException');
+        print('------------------------');
+      }
+      throw ApiError('Network error. Please check your connection.');
+    } catch (e, s) {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Error on POST $uri: $e');
+        print('Stacktrace: $s');
+        print('------------------------');
+      }
+      rethrow;
     }
   }
 
   /// 发送GET请求的辅助方法
-  Future<Map<String, dynamic>> _get(String endpoint, [Map<String, String>? queryParams]) async {
-    final uri = Uri.parse('$_backendBaseUrl$endpoint').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: _getHeaders());
+  Future<ApiResponse<T>> _get<T>(String endpoint, T Function(dynamic) fromJson, {Map<String, String>? queryParams}) async {
+    final uri = Uri.parse('${Environment.baseUrl}$endpoint').replace(queryParameters: queryParams);
+    final headers = _getHeaders();
 
-    if (response.statusCode == 200) {
-      return jsonDecode(utf8.decode(response.bodyBytes));
-    } else {
-      // TODO: 更精细的错误处理
-      throw Exception('Failed to get data from $endpoint. Status code: ${response.statusCode}');
+    if (kDebugMode) {
+      print('--- ApiService Request ---');
+      print('GET $uri');
+      print('Headers: $headers');
+      print('------------------------');
+    }
+
+    try {
+      final response = await http.get(uri, headers: headers);
+      if (kDebugMode) {
+        print('--- ApiService Response ---');
+        print('URL: ${response.request?.url}');
+        print('Status Code: ${response.statusCode}');
+        print('Body: ${utf8.decode(response.bodyBytes)}');
+        print('-------------------------');
+      }
+      return _handleResponse(response, fromJson);
+    } on SocketException {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Network error for GET $uri: SocketException');
+        print('------------------------');
+      }
+      throw ApiError('Network error. Please check your connection.');
+    } catch (e, s) {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Error on GET $uri: $e');
+        print('Stacktrace: $s');
+        print('------------------------');
+      }
+      rethrow;
+    }
+  }
+
+  /// 发送PUT请求的辅助方法
+  Future<ApiResponse<T>> _put<T>(String endpoint, T Function(dynamic) fromJson, {Map<String, dynamic>? data}) async {
+    final uri = Uri.parse('${Environment.baseUrl}$endpoint');
+    final headers = _getHeaders();
+    final body = data != null ? jsonEncode(data) : null;
+
+    if (kDebugMode) {
+      print('--- ApiService Request ---');
+      print('PUT $uri');
+      print('Headers: $headers');
+      print('Body: $body');
+      print('------------------------');
+    }
+
+    try {
+      final response = await http.put(uri, headers: headers, body: body);
+      if (kDebugMode) {
+        print('--- ApiService Response ---');
+        print('URL: ${response.request?.url}');
+        print('Status Code: ${response.statusCode}');
+        print('Body: ${utf8.decode(response.bodyBytes)}');
+        print('-------------------------');
+      }
+      return _handleResponse(response, fromJson);
+    } on SocketException {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Network error for PUT $uri: SocketException');
+        print('------------------------');
+      }
+      throw ApiError('Network error. Please check your connection.');
+    } catch (e, s) {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Error on PUT $uri: $e');
+        print('Stacktrace: $s');
+        print('------------------------');
+      }
+      rethrow;
+    }
+  }
+
+  /// 发送DELETE请求的辅助方法
+  Future<ApiResponse<T>> _delete<T>(String endpoint, T Function(dynamic) fromJson) async {
+    final uri = Uri.parse('${Environment.baseUrl}$endpoint');
+    final headers = _getHeaders();
+
+    if (kDebugMode) {
+      print('--- ApiService Request ---');
+      print('DELETE $uri');
+      print('Headers: $headers');
+      print('------------------------');
+    }
+
+    try {
+      final response = await http.delete(uri, headers: headers);
+      if (kDebugMode) {
+        print('--- ApiService Response ---');
+        print('URL: ${response.request?.url}');
+        print('Status Code: ${response.statusCode}');
+        print('Body: ${utf8.decode(response.bodyBytes)}');
+        print('-------------------------');
+      }
+      return _handleResponse(response, fromJson);
+    } on SocketException {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Network error for DELETE $uri: SocketException');
+        print('------------------------');
+      }
+      throw ApiError('Network error. Please check your connection.');
+    } catch (e, s) {
+      if (kDebugMode) {
+        print('--- ApiService Error ---');
+        print('Error on DELETE $uri: $e');
+        print('Stacktrace: $s');
+        print('------------------------');
+      }
+      rethrow;
     }
   }
 
   // --- 用户认证模块 ---
 
-  /// 1.1 用户注册
-  Future<Map<String, dynamic>> register({
-    required String phone,
-    required String password,
-    required String birthDate,
-    required String gender,
-    required String verificationCode,
-  }) async {
-    return _post('/auth/register', {
-      'phone': phone,
-      'password': password,
-      'birth_date': birthDate,
-      'gender': gender,
-      'verification_code': verificationCode,
-    });
+  Future<ApiResponse<AuthResponse>> register({required String phone, required String password, required String code}) async {
+    return _post('/auth/register', (json) => AuthResponse.fromJson(json), data: {'phone': phone, 'password': password, 'code': code});
   }
 
-  /// 1.2 用户登录
-  Future<Map<String, dynamic>> login({
-    required String phone,
-    required String loginType,
-    String? password,
-    String? verificationCode,
-  }) async {
-    final data = {
-      'phone': phone,
-      'login_type': loginType,
-    };
-    if (password != null) {
-      data['password'] = password;
-    }
-    if (verificationCode != null) {
-      data['verification_code'] = verificationCode;
-    }
-    return _post('/auth/login', data);
+  Future<ApiResponse<AuthResponse>> login({required String phone, String? password}) async {
+    return _post('/auth/login', (json) => AuthResponse.fromJson(json), data: {'phone': phone, 'password': password});
   }
 
-  /// 1.3 忘记密码
-  Future<Map<String, dynamic>> resetPassword({
-    required String phone,
-    required String newPassword,
-    required String confirmPassword,
-    required String verificationCode,
-  }) async {
-    return _post('/auth/reset-password', {
-      'phone': phone,
-      'new_password': newPassword,
-      'confirm_password': confirmPassword,
-      'verification_code': verificationCode,
-    });
+  Future<ApiResponse<EmptyData>> resetPassword({required String phone, required String password, required String code}) async {
+    return _post('/auth/reset-password', (json) => EmptyData.fromJson(json), data: {'phone': phone, 'password': password, 'code': code});
   }
 
-  /// 1.4 发送验证码
-  Future<Map<String, dynamic>> sendSms({
-    required String phone,
-    required String type,
-  }) async {
-    return _post('/auth/send-sms', {
-      'phone': phone,
-      'type': type,
-    });
-  }
-
-
-  /// 发送PUT请求的辅助方法
-  Future<Map<String, dynamic>> _put(String endpoint, Map<String, dynamic> data) async {
-    final response = await http.put(
-      Uri.parse('$_backendBaseUrl$endpoint'),
-      headers: _getHeaders(),
-      body: jsonEncode(data),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(utf8.decode(response.bodyBytes));
-    } else {
-      // TODO: 更精细的错误处理
-      throw Exception('Failed to put data to $endpoint. Status code: ${response.statusCode}');
-    }
+  Future<ApiResponse<EmptyData>> sendSms({required String phone, required String type}) async {
+    return _post('/auth/send-code', (json) => EmptyData.fromJson(json), data: {'phone': phone, 'type': type});
   }
 
   // --- 用户信息管理模块 ---
 
-  /// 2.1 获取用户信息
-  Future<Map<String, dynamic>> getUserProfile() async {
-    return _get('/user/profile');
+  Future<ApiResponse<User>> getUserProfile() async {
+    return _get('/user/profile', (json) => User.fromJson(json));
   }
 
-  /// 2.2 更新用户信息
-  Future<Map<String, dynamic>> updateUserProfile({
-    String? nickname,
-    String? avatar,
-  }) async {
+  Future<ApiResponse<User>> updateUserProfile({String? nickname, String? avatar}) async {
     final data = <String, dynamic>{};
     if (nickname != null) data['nickname'] = nickname;
     if (avatar != null) data['avatar'] = avatar;
-    return _put('/user/profile', data);
+    return _put('/user/profile', (json) => User.fromJson(json), data: data);
   }
 
-  /// 2.3 绑定支付宝/实名认证
-  Future<Map<String, dynamic>> bindAlipay({
-    required String realName,
-    required String idCard,
-    required String alipayAccount,
-  }) async {
-    return _post('/user/bind-alipay', {
-      'real_name': realName,
-      'id_card': idCard,
-      'alipay_account': alipayAccount,
-    });
-  }
-
-  /// 发送DELETE请求的辅助方法
-  Future<Map<String, dynamic>> _delete(String endpoint) async {
-    final response = await http.delete(
-      Uri.parse('$_backendBaseUrl$endpoint'),
-      headers: _getHeaders(),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      // DELETE请求可能返回空响应体，或者不返回JSON
-      final responseBody = utf8.decode(response.bodyBytes);
-      if (responseBody.isNotEmpty) {
-        return jsonDecode(responseBody);
-      }
-      return {'code': response.statusCode, 'message': 'Success'};
-    } else {
-      // TODO: 更精细的错误处理
-      throw Exception('Failed to delete resource at $endpoint. Status code: ${response.statusCode}');
-    }
+  Future<ApiResponse<EmptyData>> bindAlipay({required String realName, required String idCard, required String alipayAccount}) async {
+    return _post('/user/bind-alipay', (json) => EmptyData.fromJson(json), data: {'real_name': realName, 'id_card': idCard, 'alipay_account': alipayAccount});
   }
 
   // --- 占卜服务模块 ---
 
-  /// 3.1 八字排盘 (新后端)
-  Future<Map<String, dynamic>> baziCalculate({
-    required String name,
-    required int gender, // 1-男, 0-女
-    required String birthDatetime,
-    required String birthLocation,
-  }) async {
-    return _post('/divination/bazi', {
-      'name': name,
-      'gender': gender,
-      'birth_datetime': birthDatetime,
-      'birth_location': birthLocation,
-    });
+  Future<ApiResponse<DivinationRecord>> baziCalculate({required String name, required int gender, required String birthDatetime, required String birthLocation}) async {
+    return _post('/fortune/baZi', (json) => DivinationRecord.fromJson(json), data: {'name': name, 'gender': gender, 'birth_datetime': birthDatetime, 'birth_location': birthLocation});
   }
 
-  /// 3.2 保存排盘记录
-  Future<Map<String, dynamic>> saveDivinationRecord({
-    required String name,
-    required String gender,
-    required String birthDatetime,
-    required Map<String, dynamic> resultData,
-  }) async {
-    return _post('/divination/save-record', {
-      'name': name,
-      'gender': gender,
-      'birth_datetime': birthDatetime,
-      'result_data': resultData,
-    });
+  Future<ApiResponse<DivinationRecord>> saveDivinationRecord({required String name, required String gender, required String birthDatetime, required Map<String, dynamic> resultData}) async {
+    return _post('/fortune/baZi/save', (json) => DivinationRecord.fromJson(json), data: {'name': name, 'gender': gender, 'birth_datetime': birthDatetime, 'result_data': resultData});
   }
 
-  /// 3.3 获取排盘历史
-  Future<Map<String, dynamic>> getDivinationHistory({
-    int page = 1,
-    int limit = 20,
-  }) async {
-    return _get('/divination/history', {
-      'page': page.toString(),
-      'limit': limit.toString(),
-    });
+  Future<ApiResponse<PaginatedResponse<DivinationRecord>>> getDivinationHistory({int page = 1, int limit = 20}) async {
+    return _get('/fortune/baZi/history', (json) => PaginatedResponse.fromJson(json, (itemJson) => DivinationRecord.fromJson(itemJson)), queryParams: {'page': page.toString(), 'limit': limit.toString()});
   }
 
-  /// 3.4 删除排盘记录
-  Future<Map<String, dynamic>> deleteDivinationRecord(int recordId) async {
-    return _delete('/divination/record/$recordId');
+  Future<ApiResponse<EmptyData>> deleteDivinationRecord(int recordId) async {
+    return _delete('/fortune/baZi/$recordId', (json) => EmptyData.fromJson(json));
   }
 
   // --- 问答系统模块 ---
 
-  /// 4.1 发起新问询
-  Future<Map<String, dynamic>> createQuestion({
-    required String title,
-    required String questionType,
-    required Map<String, dynamic> birthInfo,
-    required List<Map<String, dynamic>> questions,
-    required double rewardAmount,
-  }) async {
-    return _post('/qa/create-question', {
-      'title': title,
-      'question_type': questionType,
-      'birth_info': birthInfo,
-      'questions': questions,
-      'reward_amount': rewardAmount,
-    });
+  Future<ApiResponse<Question>> createQuestion({required String title, required String questionType, required Map<String, dynamic> birthInfo, required List<Map<String, dynamic>> questions, required double rewardAmount}) async {
+    return _post('/qa/ask', (json) => Question.fromJson(json), data: {'title': title, 'question_type': questionType, 'birth_info': birthInfo, 'questions': questions, 'reward_amount': rewardAmount});
   }
 
-  /// 4.2 获取我的问询
-  Future<Map<String, dynamic>> getMyQuestions({
-    int page = 1,
-    int limit = 20,
-    String? status,
-  }) async {
-    final params = {
-      'page': page.toString(),
-      'limit': limit.toString(),
-    };
-    if (status != null) {
-      params['status'] = status;
-    }
-    return _get('/qa/my-questions', params);
+  Future<ApiResponse<PaginatedResponse<Question>>> getMyQuestions({int page = 1, int limit = 20, String? status}) async {
+    final params = {'page': page.toString(), 'limit': limit.toString()};
+    if (status != null) params['status'] = status;
+    return _get('/qa/history', (json) => PaginatedResponse.fromJson(json, (itemJson) => Question.fromJson(itemJson)), queryParams: params);
   }
 
-  /// 4.3 获取问询详情
-  Future<Map<String, dynamic>> getQuestionDetails(int questionId) async {
-    return _get('/qa/question/$questionId');
+  Future<ApiResponse<Question>> getQuestionDetails(int questionId) async {
+    return _get('/qa/$questionId', (json) => Question.fromJson(json));
   }
 
-  /// 4.4 回答问询
-  Future<Map<String, dynamic>> answerQuestion({
-    required int questionId,
-    required List<Map<String, dynamic>> answers,
-  }) async {
-    return _post('/qa/answer', {
-      'question_id': questionId,
-      'answers': answers,
-    });
+  Future<ApiResponse<EmptyData>> answerQuestion({required int questionId, required List<Map<String, dynamic>> answers}) async {
+    return _post('/qa/answer/$questionId', (json) => EmptyData.fromJson(json), data: {'answers': answers});
   }
 
-  /// 4.5 采纳答案
-  Future<Map<String, dynamic>> adoptAnswer({
-    required int questionId,
-    required int answerId,
-  }) async {
-    return _post('/qa/adopt-answer', {
-      'question_id': questionId,
-      'answer_id': answerId,
-    });
+  Future<ApiResponse<EmptyData>> adoptAnswer({required int questionId, required int answerId}) async {
+    return _post('/qa/adopt-answer', (json) => EmptyData.fromJson(json), data: {'questionId': questionId, 'answerId': answerId});
   }
 
   // --- 一对一咨询模块 ---
 
-  /// 5.1 获取学者列表 (新后端)
-  Future<Map<String, dynamic>> getScholars({
-    int page = 1,
-    int limit = 20,
-    String? specialty,
-  }) async {
-    final params = {
-      'page': page.toString(),
-      'limit': limit.toString(),
-    };
-    if (specialty != null) {
-      params['specialty'] = specialty;
-    }
-    return _get('/consultation/scholars', params);
+  Future<ApiResponse<PaginatedResponse<Scholar>>> getScholars({int page = 1, int limit = 20, String? specialty}) async {
+    final params = {'page': page.toString(), 'limit': limit.toString()};
+    if (specialty != null) params['specialty'] = specialty;
+    return _get('/consult/scholars', (json) => PaginatedResponse.fromJson(json, (itemJson) => Scholar.fromJson(itemJson)), queryParams: params);
   }
 
-  /// 5.2 发起一对一咨询 (新后端)
-  Future<Map<String, dynamic>> createNewConsultation({
-    required int scholarId,
-    required String consultationType,
-    required Map<String, dynamic> birthInfo,
-    required List<Map<String, dynamic>> questions,
-  }) async {
-    return _post('/consultation/create', {
-      'scholar_id': scholarId,
-      'consultation_type': consultationType,
-      'birth_info': birthInfo,
-      'questions': questions,
-    });
+  Future<ApiResponse<EmptyData>> createNewConsultation({required int scholarId, required String consultationType, required Map<String, dynamic> birthInfo, required List<Map<String, dynamic>> questions}) async {
+    return _post('/consult/ask', (json) => EmptyData.fromJson(json), data: {'scholar_id': scholarId, 'consultation_type': consultationType, 'birth_info': birthInfo, 'questions': questions});
   }
 
-  /// 5.3 获取咨询历史 (新后端)
-  Future<Map<String, dynamic>> getNewConsultationHistory({
-    int page = 1,
-    int limit = 20,
-    String? status,
-  }) async {
-    final params = {
-      'page': page.toString(),
-      'limit': limit.toString(),
-    };
-    if (status != null) {
-      params['status'] = status;
-    }
-    return _get('/consultation/history', params);
+  Future<ApiResponse<PaginatedResponse<dynamic>>> getNewConsultationHistory({int page = 1, int limit = 20, String? status}) async {
+    final params = {'page': page.toString(), 'limit': limit.toString()};
+    if (status != null) params['status'] = status;
+    return _get('/consult/history', (json) => PaginatedResponse.fromJson(json, (itemJson) => itemJson), queryParams: params);
   }
 
   // --- VIP会员模块 ---
 
-  /// 6.1 获取VIP信息
-  Future<Map<String, dynamic>> getVipInfo() async {
-    return _get('/vip/info');
+  Future<ApiResponse<VipInfo>> getVipInfo() async {
+    return _get('/vip/status', (json) => VipInfo.fromJson(json));
   }
 
-  /// 6.2 购买VIP
-  Future<Map<String, dynamic>> purchaseVip({
-    required String packageType,
-    required String paymentMethod,
-  }) async {
-    return _post('/vip/purchase', {
-      'package_type': packageType,
-      'payment_method': paymentMethod,
-    });
+  Future<ApiResponse<EmptyData>> purchaseVip({required String packageType, required String paymentMethod}) async {
+    return _post('/vip/order', (json) => EmptyData.fromJson(json), data: {'package_type': packageType, 'payment_method': paymentMethod});
   }
 
   // --- 支付模块 ---
 
-  /// 7.1 创建支付订单
-  Future<Map<String, dynamic>> createPaymentOrder({
-    required String orderType,
-    required double amount,
-    required String paymentMethod,
-    required int relatedId,
-  }) async {
-    return _post('/payment/create-order', {
-      'order_type': orderType,
-      'amount': amount,
-      'payment_method': paymentMethod,
-      'related_id': relatedId,
-    });
+  Future<ApiResponse<EmptyData>> createPaymentOrder({required String orderType, required double amount, required String paymentMethod, required int relatedId}) async {
+    return _post('/payment/create-order', (json) => EmptyData.fromJson(json), data: {'orderType': orderType, 'amount': amount, 'paymentMethod': paymentMethod, 'relatedId': relatedId});
   }
 
-  // 7.2 支付回调: 通常由后端处理，前端无需调用
-
-  /// 7.3 获取消费记录
-  Future<Map<String, dynamic>> getConsumptionHistory({
-    int page = 1,
-    int limit = 20,
-  }) async {
-    return _get('/payment/consumption-history', {
-      'page': page.toString(),
-      'limit': limit.toString(),
-    });
+  Future<ApiResponse<PaginatedResponse<dynamic>>> getConsumptionHistory({int page = 1, int limit = 20}) async {
+    return _get('/payment/consumption-history', (json) => PaginatedResponse.fromJson(json, (itemJson) => itemJson), queryParams: {'page': page.toString(), 'limit': limit.toString()});
   }
 
   // --- 消息系统模块 ---
 
-  /// 8.1 获取消息列表
-  Future<Map<String, dynamic>> getMessages({
-    int page = 1,
-    int limit = 20,
-    String? type,
-  }) async {
-    final params = {
-      'page': page.toString(),
-      'limit': limit.toString(),
-    };
-    if (type != null) {
-      params['type'] = type;
-    }
-    return _get('/message/list', params);
+  Future<ApiResponse<PaginatedResponse<dynamic>>> getMessages({int page = 1, int limit = 20, String? type}) async {
+    final params = {'page': page.toString(), 'limit': limit.toString()};
+    if (type != null) params['type'] = type;
+    return _get('/messages/list', (json) => PaginatedResponse.fromJson(json, (itemJson) => itemJson), queryParams: params);
   }
 
-  /// 8.2 标记消息已读
-  Future<Map<String, dynamic>> readMessage(int messageId) async {
-    return _put('/message/$messageId/read', {});
+  Future<ApiResponse<EmptyData>> readMessage(int messageId) async {
+    return _post('/messages/read/$messageId', (json) => EmptyData.fromJson(json));
   }
 
-  /// 8.3 发送系统消息 (管理员功能)
-  Future<Map<String, dynamic>> sendSystemMessage({
-    List<int>? userIds,
-    required String title,
-    required String content,
-    required String type,
-  }) async {
-    return _post('/message/send', {
-      'user_ids': userIds,
-      'title': title,
-      'content': content,
-      'type': type,
-    });
+  Future<ApiResponse<EmptyData>> sendSystemMessage({List<int>? userIds, required String title, required String content, required String type}) async {
+    return _post('/messages/send', (json) => EmptyData.fromJson(json), data: {'userIds': userIds, 'title': title, 'content': content, 'type': type});
   }
 
   // --- 反馈建议模块 ---
 
-  /// 9.1 提交反馈
-  Future<Map<String, dynamic>> submitFeedback({
-    required String type,
-    required String content,
-    String? contactInfo,
-    List<String>? images,
-  }) async {
-    return _post('/feedback/submit', {
-      'type': type,
-      'content': content,
-      'contact_info': contactInfo,
-      'images': images,
-    });
+  Future<ApiResponse<EmptyData>> submitFeedback({required String type, required String content, String? contactInfo, List<String>? images}) async {
+    return _post('/feedback/', (json) => EmptyData.fromJson(json), data: {'type': type, 'content': content, 'contact_info': contactInfo, 'images': images});
   }
 
-  /// 9.2 提交个人意见
-  Future<Map<String, dynamic>> submitOpinion({
-    required String opinion,
-  }) async {
-    return _post('/user/opinion', {
-      'opinion': opinion,
-    });
+  Future<ApiResponse<EmptyData>> submitOpinion({required String opinion}) async {
+    return _post('/feedback/opinion', (json) => EmptyData.fromJson(json), data: {'opinion': opinion});
   }
 
   // --- 系统管理模块 ---
 
-  /// 10.1 获取版本信息
-  Future<Map<String, dynamic>> getVersionInfo() async {
-    return _get('/system/version');
+  Future<ApiResponse<VersionInfo>> getVersionInfo() async {
+    return _get('/system/settings', (json) => VersionInfo.fromJson(json));
   }
 
-  /// 10.2 检查更新
-  Future<Map<String, dynamic>> checkUpdate() async {
-    return _get('/system/check-update');
-  }
-
-  /// 获取八字排盘结果
-  ///
-  /// 必填参数:
-  /// - [name]: 测算名称
-  /// - [sex]: 性别 (0为男，1为女)
-  /// - [inputDate]: 日期排盘日期，格式如：公历2023年11月2日 06时5分
-  ///
-  /// 可选参数:
-  /// - [city1]: 真太阳时省地区
-  /// - [city2]: 真太阳时市地区 (传入city1时必填)
-  /// - [city3]: 真太阳时县地区 (传入city2时必填)
-  /// - [sect]: 晚子时规则 (1为按明天，2为按当天，默认为2)
-  /// - [sylx]: 1为启用流月
-  /// - [maxts]: 指定获取几轮大运 (1-10)
-  /// - [leixinggg]: 类型标识，通常为'on'
-  /// - [ztys]: 真太阳时标识，通常为1
-  /// - [siling]: 四柱信息标识，通常为0
-  Future<DivinationResult> getDivinationResult({
-    required String name,
-    required int sex,
-    required String inputDate,
-    String? city1,
-    String? city2,
-    String? city3,
-    int? sect,
-    int? sylx,
-    int? maxts,
-    String? leixinggg,
-    int? ztys,
-    int? siling,
-  }) async {
-    final queryParameters = {
-      'APPID': _divinationAppId,
-      'APPKEY': _divinationAppKey,
-      'api': '101',
-      'name': name,
-      'sex': sex.toString(),
-      'DateType': '5',
-      'inputdate': inputDate,
-    };
-
-    // Add optional parameters if provided
-    if (city1 != null) queryParameters['city1'] = city1;
-    if (city2 != null) queryParameters['city2'] = city2;
-    if (city3 != null) queryParameters['city3'] = city3;
-    if (sect != null) queryParameters['Sect'] = sect.toString();
-    if (sylx != null) queryParameters['SYLX'] = sylx.toString();
-    if (maxts != null) queryParameters['maxts'] = maxts.toString();
-    if (leixinggg != null) queryParameters['leixinggg'] = leixinggg;
-    if (ztys != null) queryParameters['ztys'] = ztys.toString();
-    if (siling != null) queryParameters['Siling'] = siling.toString();
-
-    final uri = Uri.parse(_divinationBaseUrl).replace(queryParameters: queryParameters);
-
-    final response = await http.get(uri);
-
-    if (response.statusCode == 200) {
-      return divinationResultFromJson(utf8.decode(response.bodyBytes));
-    } else {
-      throw Exception('Failed to load divination result');
-    }
-  }
-
-
-  /// 发起1v1咨询
-  ///
-  /// 参数:
-  /// - [scholarId]: 学者ID
-  /// - [consultationType]: 咨询类型 ('choice' 或 'essay')
-  /// - [name]: 咨询者姓名
-  /// - [gender]: 性别
-  /// - [birthDateTime]: 生辰时间
-  /// - [question]: 问题内容
-  /// - [options]: 选择题选项 (仅选择题需要)
-  Future<Map<String, dynamic>> createConsultation({
-    required String scholarId,
-    required String consultationType,
-    required String name,
-    required String gender,
-    required String birthDateTime,
-    required String question,
-    List<String>? options,
-  }) async {
-    try {
-      // 构建请求数据
-      final requestData = {
-        'scholar_id': scholarId,
-        'consultation_type': consultationType,
-        'birth_info': {
-          'name': name,
-          'gender': gender,
-          'birth_datetime': birthDateTime,
-        },
-        'questions': [
-          {
-            'question': question,
-            'type': consultationType,
-            if (consultationType == 'choice' && options != null) 'options': options,
-          }
-        ],
-      };
-
-      // TODO: 这里应该调用实际的后端API
-      // 目前返回模拟数据
-      await Future.delayed(const Duration(seconds: 2)); // 模拟网络延迟
-
-      // 模拟成功响应
-      return {
-        'code': 200,
-        'message': '咨询发起成功',
-        'data': {
-          'consultation_id': DateTime.now().millisecondsSinceEpoch,
-          'scholar_id': scholarId,
-          'scholar_name': '学者${scholarId}',
-          'price': 50.0,
-          'status': 'pending',
-          'created_at': DateTime.now().toIso8601String(),
-        }
-      };
-    } catch (e) {
-      if (kDebugMode) {
-        print('创建咨询失败: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// 获取学者列表
-  Future<List<Map<String, dynamic>>> getScholarList({
-    int page = 1,
-    int limit = 20,
-    String? specialty,
-  }) async {
-    try {
-      // TODO: 这里应该调用实际的后端API
-      // 目前返回模拟数据
-      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
-
-      return [
-        {
-          'id': '1',
-          'name': '187****2568',
-          'specialty': '八字分析',
-          'price': 50.0,
-          'rating': 4.8,
-          'consultation_count': 1000,
-        },
-        {
-          'id': '2',
-          'name': '138****9999',
-          'specialty': '风水命理',
-          'price': 80.0,
-          'rating': 4.9,
-          'consultation_count': 800,
-        },
-        {
-          'id': '3',
-          'name': '159****1234',
-          'specialty': '周易占卜',
-          'price': 60.0,
-          'rating': 4.7,
-          'consultation_count': 1200,
-        },
-      ];
-    } catch (e) {
-      if (kDebugMode) {
-        print('获取学者列表失败: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// 获取咨询历史
-  Future<Map<String, dynamic>> getConsultationHistory({
-    int page = 1,
-    int limit = 20,
-    String? status,
-  }) async {
-    try {
-      // TODO: 这里应该调用实际的后端API
-      // 目前返回模拟数据
-      await Future.delayed(const Duration(seconds: 1)); // 模拟网络延迟
-
-      return {
-        'code': 200,
-        'message': '获取成功',
-        'data': {
-          'consultations': [
-            {
-              'consultation_id': 123,
-              'scholar_name': '187****2568',
-              'consultation_type': 'choice',
-              'price': 50.0,
-              'status': 'completed',
-              'created_at': '2025-01-01 10:00:00',
-              'completed_at': '2025-01-01 11:00:00',
-            },
-            {
-              'consultation_id': 124,
-              'scholar_name': '138****9999',
-              'consultation_type': 'essay',
-              'price': 80.0,
-              'status': 'pending',
-              'created_at': '2025-01-02 14:00:00',
-              'completed_at': null,
-            },
-          ],
-          'total': 2,
-          'page': page,
-          'limit': limit,
-        }
-      };
-    } catch (e) {
-      if (kDebugMode) {
-        print('获取咨询历史失败: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// 获取八字排盘原始JSON数据 (用于WebView)
-  Future<String> getPaipanRawData({
-    required String name,
-    required int sex,
-    required String inputDate,
-    String? city1,
-    String? city2,
-    String? city3,
-    int? sect,
-    int? sylx,
-    int? maxts,
-    String? leixinggg,
-    int? ztys,
-    int? siling,
-  }) async {
-    final queryParameters = {
-      'APPID': _divinationAppId,
-      'APPKEY': _divinationAppKey,
-      'api': '1', // 使用和 show.php 一致的 api=1
-      'name': name,
-      'sex': sex.toString(),
-      'DateType': '5',
-      'inputdate': inputDate,
-    };
-
-    // 添加可选参数
-    if (city1 != null) queryParameters['city1'] = city1;
-    if (city2 != null) queryParameters['city2'] = city2;
-    if (city3 != null) queryParameters['city3'] = city3;
-    if (sect != null) queryParameters['Sect'] = sect.toString();
-    if (sylx != null) queryParameters['SYLX'] = sylx.toString();
-    if (maxts != null) queryParameters['maxts'] = maxts.toString();
-    if (leixinggg != null) queryParameters['leixinggg'] = leixinggg;
-    if (ztys != null) queryParameters['ztys'] = ztys.toString();
-    if (siling != null) queryParameters['Siling'] = siling.toString();
-
-    final uri = Uri.parse(_divinationBaseUrl).replace(queryParameters: queryParameters);
-    final response = await http.get(uri);
-
-    if (response.statusCode == 200) {
-      return utf8.decode(response.bodyBytes);
-    } else {
-      throw Exception('Failed to load paipan raw data. Status code: ${response.statusCode}');
-    }
+  Future<ApiResponse<EmptyData>> checkUpdate() async {
+    return _get('/system/health', (json) => EmptyData.fromJson(json));
   }
 }

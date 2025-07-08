@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'consumption_history_screen.dart';
 import 'bind_alipay_screen.dart';
 import 'edit_opinion_screen.dart';
+import '../models/user_model.dart';
 import 'feedback_screen.dart';
 import 'version_info_screen.dart';
 import 'vip_purchase_screen.dart';
 import 'message_center_screen.dart';
+import '../services/api_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -34,16 +41,15 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 40,
-            // backgroundImage: NetworkImage('...'), // Placeholder for profile image
-            backgroundColor: Colors.grey,
+            child: Icon(Icons.person, size: 40),
           ),
           const SizedBox(width: 16),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('周易算命', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text('用户名', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               SizedBox(height: 4),
-              Text('乙巳年·2025.08.06', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              Text('ID: N/A', style: TextStyle(fontSize: 16, color: Colors.grey)),
             ],
           ),
           const Spacer(),

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../main.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final ApiService _apiService = ApiService();
   bool isPasswordLogin = true;
   bool agree = true; // 默认勾选服务条款
   bool _obscurePassword = true;
@@ -55,28 +57,45 @@ class _LoginScreenState extends State<LoginScreen> {
     return RegExp(r'^1[3-9]\d{9}$').hasMatch(phone);
   }
 
-  void _sendVerificationCode() {
-    if (_phoneController.text.trim().isEmpty) {
+  void _sendVerificationCode() async {
+    if (_isCountingDown) return;
+
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
       _showErrorMessage('请先输入手机号');
       return;
     }
 
-    if (!_isValidPhone(_phoneController.text.trim())) {
+    if (!_isValidPhone(phone)) {
       _showErrorMessage('请输入正确的手机号格式');
       return;
     }
 
-    // 开始倒计时
     setState(() {
       _isCountingDown = true;
       _countdown = 60;
     });
-
-    // 模拟发送验证码
-    _showSuccessMessage('验证码已发送到 ${_phoneController.text}');
-
-    // 倒计时逻辑
     _startCountdown();
+
+    try {
+      // 'login', 'register', or 'reset-password'
+      final response = await _apiService.sendSms(phone: phone, type: 'login');
+      if (response.success) {
+        _showSuccessMessage(response.message ?? '验证码已发送');
+      } else {
+        _showErrorMessage(response.message ?? '验证码发送失败');
+        setState(() {
+          _isCountingDown = false;
+          _countdown = 0;
+        });
+      }
+    } on ApiError catch (e) {
+      _showErrorMessage(e.message);
+      setState(() {
+        _isCountingDown = false;
+        _countdown = 0;
+      });
+    }
   }
 
   void _startCountdown() {
@@ -105,6 +124,75 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  void _login() async {
+    if (!agree) {
+      _showErrorMessage('请先阅读并同意服务协议、隐私政策和法律声明');
+      return;
+    }
+
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      _showErrorMessage('请输入手机号');
+      return;
+    }
+
+    if (!_isValidPhone(phone)) {
+      _showErrorMessage('请输入正确的手机号格式');
+      return;
+    }
+
+    // 显示加载指示器
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    try {
+      if (isPasswordLogin) {
+        final password = _passwordController.text.trim();
+        if (password.isEmpty || password.length < 6) {
+          Navigator.pop(context); // 关闭加载框
+          _showErrorMessage('密码长度不能少于6位');
+          return;
+        }
+
+        final response = await _apiService.login(
+          phone: phone,
+          password: password,
+        );
+
+        Navigator.pop(context); // 关闭加载框
+
+        if (response.success && response.data != null) {
+          _apiService.setAuthToken(response.data!.token); // 保存token
+          _showSuccessMessage(response.message ?? '登录成功');
+          // TODO: 可以将 user 信息保存到状态管理中
+          // final user = response.data!.user;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        } else {
+          _showErrorMessage(response.message ?? '登录失败');
+        }
+      } else {
+        // 短信登录逻辑暂时禁用
+        Navigator.pop(context); // 关闭加载框
+        _showErrorMessage('短信登录功能暂未开放');
+        return;
+      }
+    } on ApiError catch (e) {
+      Navigator.pop(context); // 关闭加载框
+      _showErrorMessage(e.message);
+    } catch (e) {
+      Navigator.pop(context); // 关闭加载框
+      _showErrorMessage('发生未知错误: $e');
+    }
   }
 
   @override
@@ -171,47 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const SizedBox(height: 30),
-              _buildPrimaryButton('登录', () {
-                if (!agree) {
-                  _showErrorMessage('请先阅读并同意服务协议、隐私政策和法律声明');
-                  return;
-                }
-
-                if (_phoneController.text.trim().isEmpty) {
-                  _showErrorMessage('请输入手机号');
-                  return;
-                }
-
-                if (!_isValidPhone(_phoneController.text.trim())) {
-                  _showErrorMessage('请输入正确的手机号格式');
-                  return;
-                }
-
-                if (isPasswordLogin && _passwordController.text.trim().isEmpty) {
-                  _showErrorMessage('请输入密码');
-                  return;
-                }
-
-                if (isPasswordLogin && _passwordController.text.length < 6) {
-                  _showErrorMessage('密码长度不能少于6位');
-                  return;
-                }
-
-                if (!isPasswordLogin && _verificationCodeController.text.trim().isEmpty) {
-                  _showErrorMessage('请输入验证码');
-                  return;
-                }
-
-                if (!isPasswordLogin && _verificationCodeController.text.length != 6) {
-                  _showErrorMessage('请输入6位验证码');
-                  return;
-                }
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MainScreen()),
-                );
-              }),
+              _buildPrimaryButton('登录', _login),
               const SizedBox(height: 20),
               _buildAgreementRow(),
                 ],

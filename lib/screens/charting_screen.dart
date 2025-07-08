@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:zhouyi/screens/paipan_result_screen.dart';
 import 'package:zhouyi/services/api_service.dart';
+import 'package:zhouyi/services/divination_service.dart';
 
 class ChartingScreen extends StatefulWidget {
   const ChartingScreen({super.key});
@@ -163,14 +164,14 @@ class _ChartingScreenState extends State<ChartingScreen> {
                       ),
                     );
 
-                    final apiService = ApiService();
+                    final divinationService = DivinationService();
 
                     // 格式化日期
                     final dateFormat = _isGregorian ? '公历' : '农历';
                     final formattedDate = '$dateFormat${DateFormat('yyyy年MM月dd日 HH时mm分').format(_selectedDate!)}';
 
                     // 1. 调用API获取原始JSON数据
-                    final rawJsonData = await apiService.getPaipanRawData(
+                    final rawJsonData = await divinationService.getPaipanRawData(
                       name: _nameController.text,
                       sex: _selectedGender == '男' ? 0 : 1,
                       inputDate: formattedDate,

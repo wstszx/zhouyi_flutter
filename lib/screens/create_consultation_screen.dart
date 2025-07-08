@@ -185,25 +185,37 @@ class _CreateConsultationScreenState extends State<CreateConsultationScreen> {
       }
 
       // 调用API发起咨询
-      final result = await apiService.createConsultation(
-        scholarId: widget.scholarId,
+      // 构建问题列表
+      List<Map<String, dynamic>> questions = [
+        {
+          'content': _questionController.text.trim(),
+          'options': options,
+        }
+      ];
+
+      // 构建生辰信息
+      Map<String, dynamic> birthInfo = {
+        'name': _nameController.text.trim(),
+        'gender': _selectedGender,
+        'birth_datetime': formattedDate,
+      };
+
+      final result = await apiService.createNewConsultation(
+        scholarId: int.parse(widget.scholarId),
         consultationType: _selectedConsultationType,
-        name: _nameController.text.trim(),
-        gender: _selectedGender,
-        birthDateTime: formattedDate,
-        question: _questionController.text.trim(),
-        options: options,
+        birthInfo: birthInfo,
+        questions: questions,
       );
 
       // 关闭加载对话框
       if (mounted) Navigator.pop(context);
 
-      if (result['code'] == 200) {
-        _showSuccessMessage('咨询发起成功，等待学者回复');
+      if (result.success) {
+        _showSuccessMessage(result.message ?? '咨询发起成功，等待学者回复');
         // 返回上一页
         if (mounted) Navigator.pop(context);
       } else {
-        _showErrorMessage(result['message'] ?? '发起咨询失败');
+        _showErrorMessage(result.message ?? '发起咨询失败');
       }
     } catch (e) {
       // 关闭加载对话框
