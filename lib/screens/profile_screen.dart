@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:zhouyi/models/api_response.dart';
 import 'consumption_history_screen.dart';
 import 'bind_alipay_screen.dart';
 import 'edit_opinion_screen.dart';
-import '../models/user_model.dart';
+import 'package:zhouyi/models/app_models.dart';
 import 'feedback_screen.dart';
 import 'version_info_screen.dart';
 import 'vip_purchase_screen.dart';
@@ -17,6 +18,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  late Future<User?> _userFuture;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _userFuture = _apiService.getUserProfile().then((response) => response.data);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -35,35 +45,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            child: Icon(Icons.person, size: 40),
-          ),
-          const SizedBox(width: 16),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return FutureBuilder<User?>(
+      future: _userFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData) {
+          return const Center(child: Text('无法加载用户信息'));
+        }
+
+        final user = snapshot.data;
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
             children: [
-              Text('用户名', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              Text('ID: N/A', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: user?.avatar != null ? NetworkImage(user!.avatar!) : null,
+                child: user?.avatar == null ? const Icon(Icons.person, size: 40) : null,
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(user?.nickname ?? '用户名', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('ID: ${user?.id ?? 'N/A'}', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                ],
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.mail_outline, size: 30),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MessageCenterScreen()),
+                  );
+                },
+              ),
             ],
           ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.mail_outline, size: 30),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MessageCenterScreen()),
-              );
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

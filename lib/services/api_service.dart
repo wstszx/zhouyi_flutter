@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:zhouyi/models/api_response.dart';
-import 'package:zhouyi/models/user_model.dart';
 import 'package:zhouyi/models/paginated_response.dart';
 import 'package:zhouyi/models/app_models.dart';
 
@@ -23,7 +23,7 @@ class ApiError implements Exception {
 
 /// 环境配置
 class Environment {
-  static const String _devBaseUrl = 'http://192.168.1.14:5000/api/app';
+  static const String _devBaseUrl = 'http://192.168.1.6:5000/api/app';
   static const String _prodBaseUrl = 'https://api.yourdomain.com/api/app'; // 替换为您的生产环境域名
 
   static String get baseUrl {
@@ -37,6 +37,12 @@ class Environment {
 
 class ApiService {
   String? _token;
+  late GlobalKey<NavigatorState> _navigatorKey;
+
+  /// 设置NavigatorKey
+  void setNavigatorKey(GlobalKey<NavigatorState> navigatorKey) {
+    _navigatorKey = navigatorKey;
+  }
 
   /// 设置认证令牌
   void setAuthToken(String? token) {
@@ -58,20 +64,38 @@ class ApiService {
   /// 处理HTTP响应
   ApiResponse<T> _handleResponse<T>(http.Response response, T Function(dynamic) fromJson) {
     final decodedBody = jsonDecode(utf8.decode(response.bodyBytes));
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final apiResponse = ApiResponse.fromJson(decodedBody, fromJson);
       if (apiResponse.success) {
         return apiResponse;
       } else {
+        // 后端返回成功状态码，但业务逻辑失败
         throw ApiError(apiResponse.message ?? 'Unknown error', code: apiResponse.code);
       }
-    } else {
-      throw ApiError(
-        decodedBody['message'] ?? 'Unknown server error',
-        code: response.statusCode,
-        errorData: decodedBody,
-      );
     }
+
+    // 统一处理错误情况
+    final errorMessage = decodedBody['message'] ?? 'Unknown server error';
+
+    if (response.statusCode == 401) {
+      // 根据错误信息判断是跳转还是提示
+      // "用户已被禁用" 这类错误，不应该自动跳转到登录页，而是应该在UI层提示用户
+      if (errorMessage != '用户已被禁用') {
+        // 清除token并跳转到登录页
+        setAuthToken(null);
+        _navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+      // 抛出异常，让UI层捕获并显示
+      throw ApiError(errorMessage, code: response.statusCode, errorData: decodedBody);
+    }
+
+    // 其他HTTP错误
+    throw ApiError(
+      errorMessage,
+      code: response.statusCode,
+      errorData: decodedBody,
+    );
   }
 
   /// 发送POST请求的辅助方法
@@ -365,7 +389,7 @@ class ApiService {
     return _post('/messages/read/$messageId', (json) => EmptyData.fromJson(json));
   }
 
-  Future<ApiResponse<EmptyData>> sendSystemMessage({List<int>? userIds, required String title, required String content, required String type}) async {
+  Future<ApiResponse<EmptyData>> sendSystemMessage({List<String>? userIds, required String title, required String content, required String type}) async {
     return _post('/messages/send', (json) => EmptyData.fromJson(json), data: {'userIds': userIds, 'title': title, 'content': content, 'type': type});
   }
 

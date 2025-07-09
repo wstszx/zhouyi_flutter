@@ -1,9 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:zhouyi/models/app_models.dart';
+import 'package:zhouyi/models/api_response.dart';
+import 'package:zhouyi/models/paginated_response.dart';
 import 'package:zhouyi/screens/charting_screen.dart';
+import 'package:zhouyi/services/api_service.dart';
+import 'package:zhouyi/main.dart';
 
-class AstrolabeScreen extends StatelessWidget {
+class AstrolabeScreen extends StatefulWidget {
   const AstrolabeScreen({super.key});
+
+  @override
+  State<AstrolabeScreen> createState() => _AstrolabeScreenState();
+}
+
+class _AstrolabeScreenState extends State<AstrolabeScreen> {
+  late Future<PaginatedResponse<DivinationRecord>?> _historyFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _historyFuture = apiService.getDivinationHistory().then((response) => response.data);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +33,25 @@ class AstrolabeScreen extends StatelessWidget {
             _buildSearchBarAndNewButton(context),
             const SizedBox(height: 20),
             Expanded(
-              child: ListView.builder(
-                itemCount: 4, // Example count
-                itemBuilder: (context, index) {
-                  return _buildAstrolabeCard(context, '张三 (男)', '2025-08-08');
+              child: FutureBuilder<PaginatedResponse<DivinationRecord>?>(
+                future: _historyFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.items.isEmpty) {
+                    return const Center(child: Text('没有占卜记录'));
+                  }
+
+                  final records = snapshot.data!.items;
+                  return ListView.builder(
+                    itemCount: records.length,
+                    itemBuilder: (context, index) {
+                      final record = records[index];
+                      return _buildAstrolabeCard(context, record);
+                    },
+                  );
                 },
               ),
             ),
@@ -68,9 +101,9 @@ class AstrolabeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAstrolabeCard(BuildContext context, String name, String birthDate) {
+  Widget _buildAstrolabeCard(BuildContext context, DivinationRecord record) {
     return Slidable(
-      key: const ValueKey(0),
+      key: ValueKey(record.id),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         extentRatio: 0.5,
@@ -127,13 +160,13 @@ class AstrolabeScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$name', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                  Text('${record.name} (${record.gender == 1 ? '男' : '女'})', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
                   const SizedBox(height: 8),
-                  Text('生辰：$birthDate', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                  Text('生辰：${record.birthDatetime}', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
                 ],
               ),
               const Text(
-                '辛 乙 甲 庚\n已 卯 午 申',
+                '辛 乙 甲 庚\n已 卯 午 申', // This seems to be static, leaving as is.
                 textAlign: TextAlign.right,
                 style: TextStyle(fontSize: 16, color: Color(0xFF8B4513), fontWeight: FontWeight.bold),
               ),

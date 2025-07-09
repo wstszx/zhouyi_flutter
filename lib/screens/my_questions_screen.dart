@@ -1,7 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:zhouyi/models/api_response.dart';
+import 'package:zhouyi/models/app_models.dart';
+import 'package:zhouyi/main.dart';
+import 'package:zhouyi/services/api_service.dart';
+import 'package:zhouyi/models/paginated_response.dart';
 
-class MyQuestionsScreen extends StatelessWidget {
+class MyQuestionsScreen extends StatefulWidget {
   const MyQuestionsScreen({super.key});
+
+  @override
+  State<MyQuestionsScreen> createState() => _MyQuestionsScreenState();
+}
+
+class _MyQuestionsScreenState extends State<MyQuestionsScreen> {
+  late Future<PaginatedResponse<Question>?> _questionsFuture;
+  final ApiService _apiService = apiService; // Use the global instance
+
+  @override
+  void initState() {
+    super.initState();
+    _questionsFuture = _apiService.getMyQuestions().then((response) => response.data);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,50 +33,33 @@ class MyQuestionsScreen extends StatelessWidget {
       ),
       body: Container(
         color: const Color(0xFFFDEBEB).withOpacity(0.5),
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            _buildQuestionCard(
-              context,
-              title: '5道选择题',
-              status: '剩余 71 : 22 : 08',
-              statusColor: Colors.green,
-              user: '187****2568',
-              date: '2025-08-08',
-              answerCount: '72人回答',
-            ),
-            _buildQuestionCard(
-              context,
-              title: '问答题',
-              status: '已结束',
-              statusColor: Colors.grey,
-              user: '187****2568',
-              date: '2025-08-08',
-              answerCount: '0人回答',
-            ),
-            _buildQuestionCard(
-              context,
-              title: '问答题',
-              status: '查看详情',
-              statusColor: const Color(0xFF8B4513),
-              user: '187****2568',
-              date: '2025-08-08',
-              answerCount: '100人回答',
-            ),
-          ],
+        child: FutureBuilder<PaginatedResponse<Question>?>(
+          future: _questionsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.items.isEmpty) {
+              return const Center(child: Text('没有找到问询记录'));
+            }
+
+            final questions = snapshot.data!.items;
+            return ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: questions.length,
+              itemBuilder: (context, index) {
+                final question = questions[index];
+                return _buildQuestionCard(context, question: question);
+              },
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildQuestionCard(BuildContext context, {
-    required String title,
-    required String status,
-    required Color statusColor,
-    required String user,
-    required String date,
-    required String answerCount,
-  }) {
+  Widget _buildQuestionCard(BuildContext context, {required Question question}) {
     return Card(
       color: const Color(0xFFFDEBEB),
       elevation: 0,
@@ -71,8 +73,8 @@ class MyQuestionsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B4513))),
-                Text(status, style: TextStyle(fontSize: 16, color: statusColor, fontWeight: FontWeight.bold)),
+                Text(question.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B4513))),
+                Text(question.status, style: TextStyle(fontSize: 16, color: _getStatusColor(question.status), fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 16),
@@ -82,17 +84,28 @@ class MyQuestionsScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('用户: $user', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                    Text('用户: ${question.user?.nickname ?? '匿名用户'}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
                     const SizedBox(height: 4),
-                    Text(date, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                    Text(question.createdAt, style: const TextStyle(fontSize: 14, color: Colors.grey)),
                   ],
                 ),
-                Text(answerCount, style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                Text('${question.answerCount}人回答', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
               ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case '进行中':
+        return Colors.green;
+      case '已结束':
+        return Colors.grey;
+      default:
+        return const Color(0xFF8B4513);
+    }
   }
 }

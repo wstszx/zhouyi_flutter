@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = apiService; // Use the global instance
   bool isPasswordLogin = true;
   bool agree = true; // 默认勾选服务条款
   bool _obscurePassword = true;

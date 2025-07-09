@@ -1,41 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:zhouyi/models/api_response.dart';
+import 'package:zhouyi/models/app_models.dart';
+import 'package:zhouyi/models/paginated_response.dart';
+import 'package:zhouyi/services/api_service.dart';
 import 'create_consultation_screen.dart';
 
-class OneOnOneScreen extends StatelessWidget {
+class OneOnOneScreen extends StatefulWidget {
   const OneOnOneScreen({super.key});
+
+  @override
+  State<OneOnOneScreen> createState() => _OneOnOneScreenState();
+}
+
+class _OneOnOneScreenState extends State<OneOnOneScreen> {
+  late Future<PaginatedResponse<Scholar>?> _scholarsFuture;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _scholarsFuture = _apiService.getScholars().then((response) => response.data);
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildSectionHeader(context, '2025-08-08 选择题'),
-          _buildScholarCard(context, '187****2568', 'XXXXXXXXXX', '50'),
-          _buildScholarCard(context, '187****2568', 'XXXXXXXXXX', '50'),
-          _buildScholarCard(context, '187****2568', 'XXXXXXXXXX', '50'),
-          _buildExpandButton(context),
-          const SizedBox(height: 20),
-          _buildSectionHeader(context, '2025-08-08 问答题'),
-          _buildScholarCard(context, '187****2568', 'XXXXXXXXXX', '50'),
-          _buildScholarCard(context, '187****2568', 'XXXXXXXXXX', '50'),
-          _buildScholarCard(context, '187****2568', 'XXXXXXXXXX', '50'),
-        ],
+      child: FutureBuilder<PaginatedResponse<Scholar>?>(
+        future: _scholarsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.items.isEmpty) {
+            return const Center(child: Text('没有找到学者'));
+          }
+
+          final scholars = snapshot.data!.items;
+          return ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: scholars.length,
+            itemBuilder: (context, index) {
+              final scholar = scholars[index];
+              return _buildScholarCard(context, scholar);
+            },
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF8B4513)),
-      ),
-    );
-  }
-
-  Widget _buildScholarCard(BuildContext context, String name, String expertise, String price) {
+  Widget _buildScholarCard(BuildContext context, Scholar scholar) {
     return Card(
       color: const Color(0xFFFDEBEB),
       elevation: 0,
@@ -49,9 +64,9 @@ class OneOnOneScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('学者：$name', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                Text('学者：${scholar.nickname}', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
                 const SizedBox(height: 8),
-                Text('学术：$expertise', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
+                Text('学术：${scholar.specialty}', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513))),
               ],
             ),
             Column(
@@ -62,9 +77,9 @@ class OneOnOneScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => CreateConsultationScreen(
-                          scholarId: '1', // 这里应该是实际的学者ID
-                          scholarName: name,
-                          price: price,
+                          scholarId: scholar.id.toString(),
+                          scholarName: scholar.nickname,
+                          price: scholar.price.toString(),
                         ),
                       ),
                     );
@@ -77,20 +92,12 @@ class OneOnOneScreen extends StatelessWidget {
                   child: const Text('发起1v1'),
                 ),
                 const SizedBox(height: 4),
-                Text('¥ $price', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513), fontWeight: FontWeight.bold)),
+                Text('¥ ${scholar.price}', style: const TextStyle(fontSize: 16, color: Color(0xFF8B4513), fontWeight: FontWeight.bold)),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildExpandButton(BuildContext context) {
-    return TextButton.icon(
-      onPressed: () {},
-      icon: const Icon(Icons.expand_more, color: Color(0xFF8B4513)),
-      label: const Text('展开全部', style: TextStyle(color: Color(0xFF8B4513))),
     );
   }
 }

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zhouyi/services/api_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/qa_marketplace_screen.dart';
 import 'screens/one_on_one_screen.dart';
 import 'screens/astrolabe_screen.dart';
 import 'screens/profile_screen.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final ApiService apiService = ApiService();
+
 void main() {
+  apiService.setNavigatorKey(navigatorKey);
   runApp(const MyApp());
 }
 
@@ -16,12 +21,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Zhouyi',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         fontFamily: 'PingFang SC',
       ),
-      home: const LoginScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/main': (context) => const MainScreen(),
+      },
     );
   }
 }
